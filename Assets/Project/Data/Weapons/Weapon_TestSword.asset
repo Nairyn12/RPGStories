@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 18ce55930758c0546ac45ef5ed310802, type: 3}
+  m_Name: Weapon_TestSword
+  m_EditorClassIdentifier: Assembly-CSharp::Game.RPG.WeaponDataSO
+  WeaponName: Sword
+  BaseDamage: 15
+  AttackCooldown: 0.8
+  AttackRange: 1.5
+  StaminaCost: 0
+  MeleeScaling: 0.05
