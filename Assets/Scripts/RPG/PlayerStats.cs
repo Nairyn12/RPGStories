@@ -17,6 +17,10 @@ namespace Game.RPG
         [SerializeField] private float staminaPerLevel = 5f;
         [SerializeField] private float manaPerLevel = 5f;
 
+        [Header("Magic Scaling")]
+        [Tooltip("Сколько маны дает 1 уровень любого магического навыка")]
+        [SerializeField] private float manaPerMagicPoint = 2f; // <-- ДОБАВИТЬ
+
         [Header("Level")]
         [SerializeField] private int level = 1;
         [SerializeField] private int skillPoints = 0;
@@ -58,10 +62,21 @@ namespace Game.RPG
         {
             StatType.HealthMax => baseHealth + (level - 1) * healthPerLevel,
             StatType.StaminaMax => baseStamina + (level - 1) * staminaPerLevel,
-            StatType.ManaMax => baseMana + (level - 1) * manaPerLevel,
+
+            // Мана зависит от уровня и от суммы всех магических навыков
+            StatType.ManaMax => baseMana + (level - 1) * manaPerLevel + (GetTotalMagicSkill() * manaPerMagicPoint),
+
             StatType.Speed => baseSpeed,
             _ => 0f
         };
+
+        // НОВЫЙ МЕТОД
+        public int GetTotalMagicSkill()
+        {
+            return GetBaseSkillValue(StatType.Elemental)
+                 + GetBaseSkillValue(StatType.Restoration)
+                 + GetBaseSkillValue(StatType.Manipulation);
+        }
 
         public void AddModifier(StatModifier m) { _modifiers.Add(m); NotifyStatChanged(m.Stat); }
         public void RemoveModifiersBySource(string sourceId)
@@ -83,7 +98,13 @@ namespace Game.RPG
             int current = GetBaseSkillValue(skill);
             if (current >= maxValue) return false;
             skillPoints -= cost; _baseSkillValues[skill] = current + 1;
-            NotifyStatChanged(skill); return true;
+            NotifyStatChanged(skill);
+            // Если прокачали магию - пересчитываем максимальную ману
+            if (skill.IsMagicSkill())
+            {
+                NotifyStatChanged(StatType.ManaMax);
+            }
+            return true;
         }
 
         public bool TrySpendSkillPoint(SkillDefinitionSO skillDef)

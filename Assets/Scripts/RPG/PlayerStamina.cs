@@ -22,6 +22,11 @@ namespace Game.RPG
 
         public event Action<float, float> OnStaminaChanged; // (current, max)
 
+        [SerializeField] private float exhaustedRecoveryPercent = 0.3f;
+        private bool _isExhausted = false;
+
+        public bool CanSprint => !_isExhausted && currentStamina > 0f;
+
         public float CurrentStamina => currentStamina;
         public float MaxStamina => _stats.GetStat(StatType.StaminaMax);
 
@@ -55,12 +60,16 @@ namespace Game.RPG
 
         private void Update()
         {
-            // Автоматическое восстановление стамины, если прошло достаточно времени
             if (Time.time >= _lastConsumeTime + regenDelay && currentStamina < MaxStamina)
             {
                 currentStamina += regenRate * Time.deltaTime;
                 currentStamina = Mathf.Min(currentStamina, MaxStamina);
                 NotifyStaminaChanged();
+            }
+
+            if (_isExhausted && currentStamina >= MaxStamina * exhaustedRecoveryPercent)
+            {
+                _isExhausted = false; // Восстановили дыхание
             }
         }
 
@@ -85,10 +94,16 @@ namespace Game.RPG
         public bool TryConsume(float amount)
         {
             if (amount <= 0) return true;
-            if (currentStamina < amount) return false;
+            if (currentStamina < amount)
+            {
+                _isExhausted = true;
+                return false;
+            }
 
             currentStamina -= amount;
-            _lastConsumeTime = Time.time; // Сбрасываем таймер задержки регена
+            _lastConsumeTime = Time.time;
+
+            if (currentStamina <= 0) _isExhausted = true;
             NotifyStaminaChanged();
             return true;
         }

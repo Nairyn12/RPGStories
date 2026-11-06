@@ -14,7 +14,7 @@ namespace Game.RPG
         [SerializeField] private PlayerController playerController; // <-- ƒќЅј¬»“№
         [SerializeField] private PlayerAnimator playerAnimator;     // <-- ƒќЅј¬»“№
         [SerializeField] private WeaponHitbox hitbox;
-        [SerializeField] private WeaponDataSO currentWeapon; // јссет меча, который мы создали
+        [SerializeField] private WeaponItemSO currentWeapon;
 
         // —войство, которое читает PlayerController
         public bool IsAttacking { get; private set; }

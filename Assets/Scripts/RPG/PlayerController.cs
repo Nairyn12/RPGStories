@@ -140,19 +140,18 @@ namespace Game.RPG
             float statSpeedMultiplier = 1f + (stats.GetStat(StatType.Speed) * speedBonusPerPoint);
 
             float targetSpeed = 0f;
-            
-            if(desiredDir.sqrMagnitude > 0.01f)
+            if (desiredDir.sqrMagnitude > 0.01f)
             {
-                if (_isSprintHeld && stamina.HasEnoughStamina)
+                if (_isSprintHeld && stamina.CanSprint) // <-- ИЗМЕНЕНО
                 {
-                    if (_isCrouching) ToggleCrouch(); // Встаем при беге
+                    if (_isCrouching) ToggleCrouch();
                     targetSpeed = runSpeed;
                 }
                 else if (_isCrouching) targetSpeed = crouchSpeed;
                 else targetSpeed = walkSpeed;
 
                 targetSpeed *= statSpeedMultiplier;
-            }          
+            }
 
             Vector3 targetVelocity = desiredDir * targetSpeed;
             Vector3 currentVel = new Vector3(_rb.linearVelocity.x, 0, _rb.linearVelocity.z);
@@ -164,25 +163,44 @@ namespace Game.RPG
 
         private void HandleRotation()
         {
-            // Если мы в бою, мы всегда смотрим туда, куда смотрит камера
+            // Вычисляем направление, куда игрок хочет двигаться (относительно камеры)
+            Vector3 camForward = cameraTransform ? cameraTransform.forward : Vector3.forward;
+            Vector3 camRight = cameraTransform ? cameraTransform.right : Vector3.right;
+            camForward.y = 0f; camRight.y = 0f;
+            camForward.Normalize(); camRight.Normalize();
+
+            Vector3 desiredDir = (camForward * _moveInput.y + camRight * _moveInput.x);
+
             if (combatState != null && combatState.IsInCombat)
             {
-                Vector3 camForward = cameraTransform.forward;
-                camForward.y = 0f;
-                if (camForward.sqrMagnitude > 0.01f)
+                // В БОЮ:
+                // 1. Если мы жмем S (назад) или вообще не двигаемся - смотрим на камеру (на врага)
+                if (_moveInput.y < -0.1f && Mathf.Abs(_moveInput.x) < 0.1f || _moveInput.sqrMagnitude < 0.01f)
                 {
-                    Quaternion targetRot = Quaternion.LookRotation(camForward.normalized, Vector3.up);
+                    Vector3 combatForward = cameraTransform.forward;
+                    combatForward.y = 0f;
+                    if (combatForward.sqrMagnitude > 0.01f)
+                    {
+                        Quaternion targetRot = Quaternion.LookRotation(combatForward.normalized, Vector3.up);
+                        _rb.MoveRotation(Quaternion.Slerp(_rb.rotation, targetRot, rotationSpeed * Time.fixedDeltaTime));
+                    }
+                }
+                // 2. Если мы жмем W, A или D (вперед или вбок) - разворачиваемся туда, куда идем
+                else if (desiredDir.sqrMagnitude > 0.01f)
+                {
+                    Quaternion targetRot = Quaternion.LookRotation(desiredDir.normalized, Vector3.up);
                     _rb.MoveRotation(Quaternion.Slerp(_rb.rotation, targetRot, rotationSpeed * Time.fixedDeltaTime));
                 }
-                return; // Выходим, не поворачиваясь в сторону движения
             }
+            else
+            {
+                // ВНЕ БОЯ: Стандартное поведение (смотрим в сторону движения)
+                Vector3 horizontalVel = new Vector3(_rb.linearVelocity.x, 0, _rb.linearVelocity.z);
+                if (horizontalVel.sqrMagnitude < 0.05f) return;
 
-            // Вне боя - стандартное поведение (смотрим в сторону движения)
-            Vector3 horizontalVel = new Vector3(_rb.linearVelocity.x, 0, _rb.linearVelocity.z);
-            if (horizontalVel.sqrMagnitude < 0.05f) return;
-
-            Quaternion targetRotNormal = Quaternion.LookRotation(horizontalVel.normalized, Vector3.up);
-            _rb.MoveRotation(Quaternion.Slerp(_rb.rotation, targetRotNormal, rotationSpeed * Time.fixedDeltaTime));
+                Quaternion targetRotNormal = Quaternion.LookRotation(horizontalVel.normalized, Vector3.up);
+                _rb.MoveRotation(Quaternion.Slerp(_rb.rotation, targetRotNormal, rotationSpeed * Time.fixedDeltaTime));
+            }
         }
 
         private void HandleSprintStamina()

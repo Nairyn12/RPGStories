@@ -23,6 +23,8 @@ namespace Game.RPG
         private Vector3 _startPosition;
         private float _wanderRadius = 5f; // Радиус патрулирования
 
+        [SerializeField] private GameObject healthBarPrefab;
+
         private void Start()
         {
             _agent = GetComponent<NavMeshAgent>();
@@ -32,16 +34,27 @@ namespace Game.RPG
             if (data != null)
             {
                 _agent.speed = data.MovementSpeed;
-                _agent.stoppingDistance = data.AttackRange - 0.5f; // Останавливаемся чуть раньше дистанции удара
+                _agent.stoppingDistance = data.AttackRange - 0.5f;
             }
 
-            // Ищем игрока на сцене
+            // 1. Поиск игрока
             var playerStats = FindFirstObjectByType<PlayerStats>();
-            if (playerStats != null)
+            if (playerStats != null) _playerTransform = playerStats.transform;
+            _playerHealth = FindFirstObjectByType<PlayerHealth>();
+            _playerCombatState = FindFirstObjectByType<CombatState>();
+
+            // 2. Спавн полоски здоровья (то, что мы случайно удалили)
+            if (healthBarPrefab != null)
             {
-                _playerTransform = playerStats.transform;
-                _playerHealth = playerStats.GetComponent<PlayerHealth>();
-                _playerCombatState = playerStats.GetComponent<CombatState>();
+                Canvas canvas = FindFirstObjectByType<Canvas>();
+                if (canvas != null)
+                {
+                    GameObject barObj = Instantiate(healthBarPrefab, canvas.transform);
+                    if (barObj.TryGetComponent(out EnemyHealthBar bar))
+                    {
+                        bar.Initialize(_health, transform);
+                    }
+                }
             }
         }
 
@@ -129,12 +142,10 @@ namespace Game.RPG
         {
             Debug.Log($"[ИИ] {gameObject.name} наносит удар!");
 
-            // Временно, пока нет анимаций: просто наносим урон, если игрок всё еще рядом
-            if (_playerHealth != null && Vector3.Distance(transform.position, _playerTransform.position) <= data.AttackRange + 0.5f)
+            // Убрали проверку дистанции, так как State.Attacking уже проверяет её
+            if (_playerHealth != null)
             {
-                // Высчитываем урон с учетом Защиты (пока просто базовый урон)
-                float damage = data.Damage;
-                _playerHealth.TakeDamage(damage);
+                _playerHealth.TakeDamage(data.Damage);
             }
         }
     }

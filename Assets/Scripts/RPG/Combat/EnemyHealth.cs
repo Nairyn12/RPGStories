@@ -9,23 +9,28 @@ namespace Game.RPG
 
         private float _currentHealth;
 
+        public event System.Action<float, float> OnHealthChanged;
+
         public float CurrentHealth => _currentHealth;
         public float MaxHealth => data != null ? data.MaxHealth : 50f;
         public bool IsDead => _currentHealth <= 0;
 
-        private void Start()
+
+        private void Awake()
         {
-            if (data != null)
+            if(data != null)
                 _currentHealth = data.MaxHealth;
             else
-                _currentHealth = 50f; // Заглушка, если забыли назначить Data
-        }
+                _currentHealth = 50f;
+        }       
 
         public void TakeDamage(float amount, GameObject source = null)
         {
             if (IsDead) return;
 
             _currentHealth -= amount;
+
+            OnHealthChanged?.Invoke(_currentHealth, MaxHealth); // <-- ДОБАВИТЬ
             Debug.Log($"[Враг] {gameObject.name} получил {amount} урона. Осталось HP: {_currentHealth}/{MaxHealth}");
 
             // Обновляем боевой режим у игрока, когда мы получаем урон
