@@ -21,6 +21,12 @@ namespace Game.RPG
 
         private void Start()
         {
+            // АВТОПОИСК
+            if (health == null) health = FindFirstObjectByType<PlayerHealth>();
+            if (stamina == null) stamina = FindFirstObjectByType<PlayerStamina>();
+            if (leveling == null) leveling = FindFirstObjectByType<PlayerLeveling>();
+            if (mana == null) mana = FindFirstObjectByType<PlayerMana>();
+
             if (health == null || stamina == null || leveling == null) return;
 
             // Подписываемся на события

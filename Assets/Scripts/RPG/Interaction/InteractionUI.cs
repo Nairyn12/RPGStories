@@ -11,8 +11,10 @@ namespace Game.RPG
 
         private void Start()
         {
+            if (interactor == null) interactor = FindFirstObjectByType<PlayerInteractor>();
+
             panel.SetActive(false);
-            interactor.OnInteractPromptChanged += HandlePromptChanged;
+            if (interactor != null) interactor.OnInteractPromptChanged += HandlePromptChanged;
         }
 
         private void OnDestroy()

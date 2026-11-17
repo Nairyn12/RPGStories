@@ -1,0 +1,16 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b02fd055649a3364fbbe348760296f7d, type: 3}
+  m_Name: Action_ModifyRep_m
+  m_EditorClassIdentifier: Assembly-CSharp::Game.RPG.ModifyReputationAction
+  Faction: {fileID: 11400000, guid: d5fa556f81b772140b14f09eb5821e6a, type: 2}
+  Amount: -10

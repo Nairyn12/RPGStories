@@ -1,4 +1,4 @@
-using UnityEngine;
+п»їusing UnityEngine;
 
 namespace Game.RPG
 {
@@ -30,10 +30,10 @@ namespace Game.RPG
 
             _currentHealth -= amount;
 
-            OnHealthChanged?.Invoke(_currentHealth, MaxHealth); // <-- ДОБАВИТЬ
-            Debug.Log($"[Враг] {gameObject.name} получил {amount} урона. Осталось HP: {_currentHealth}/{MaxHealth}");
+            OnHealthChanged?.Invoke(_currentHealth, MaxHealth); // <-- Р”РћР‘РђР’РРўР¬
+            Debug.Log($"[Р’СЂР°Рі] {gameObject.name} РїРѕР»СѓС‡РёР» {amount} СѓСЂРѕРЅР°. РћСЃС‚Р°Р»РѕСЃСЊ HP: {_currentHealth}/{MaxHealth}");
 
-            // Обновляем боевой режим у игрока, когда мы получаем урон
+            // РћР±РЅРѕРІР»СЏРµРј Р±РѕРµРІРѕР№ СЂРµР¶РёРј Сѓ РёРіСЂРѕРєР°, РєРѕРіРґР° РјС‹ РїРѕР»СѓС‡Р°РµРј СѓСЂРѕРЅ
             if (source != null && source.TryGetComponent(out CombatState combatState))
             {
                 combatState.RefreshCombat();
@@ -47,36 +47,39 @@ namespace Game.RPG
 
         private void Die()
         {
-            Debug.Log($"[Враг] {gameObject.name} погиб!");
+            Debug.Log($"[Р’СЂР°Рі] {gameObject.name} РїРѕРіРёР±!");
 
-            // 1. Начисляем опыт
+            // 1. РќР°С‡РёСЃР»СЏРµРј РѕРїС‹С‚
             if (data != null)
             {
                 var playerLeveling = FindFirstObjectByType<PlayerLeveling>();
-                if (playerLeveling != null)
+                if (playerLeveling != null) playerLeveling.AddXp(data.XpReward);
+
+                // рџ›  РќРћР’РћР•: РЎРѕРѕР±С‰Р°РµРј РєРІРµСЃС‚РѕРІРѕР№ СЃРёСЃС‚РµРјРµ РѕР± СѓР±РёР№СЃС‚РІРµ
+                if (QuestManager.Instance != null)
                 {
-                    playerLeveling.AddXp(data.XpReward);
-                    Debug.Log($"[Враг] Игрок получил {data.XpReward} XP.");
+                    QuestManager.Instance.ReportKill(data.EnemyId);
                 }
             }
 
-            //// 2. Выводим из боевого режима
-            //// Обновляем боевой режим у игрока, когда мы получаем урон
+
+            //// 2. Р’С‹РІРѕРґРёРј РёР· Р±РѕРµРІРѕРіРѕ СЂРµР¶РёРјР°
+            //// РћР±РЅРѕРІР»СЏРµРј Р±РѕРµРІРѕР№ СЂРµР¶РёРј Сѓ РёРіСЂРѕРєР°, РєРѕРіРґР° РјС‹ РїРѕР»СѓС‡Р°РµРј СѓСЂРѕРЅ
             //var combatState = FindFirstObjectByType<CombatState>();
             //if (combatState != null) combatState.RefreshCombat();
 
-            // 3. Отключаем поведение и физику (превращаем в труп)
-            this.enabled = false; // Отключаем получение урона
+            // 3. РћС‚РєР»СЋС‡Р°РµРј РїРѕРІРµРґРµРЅРёРµ Рё С„РёР·РёРєСѓ (РїСЂРµРІСЂР°С‰Р°РµРј РІ С‚СЂСѓРї)
+            this.enabled = false; // РћС‚РєР»СЋС‡Р°РµРј РїРѕР»СѓС‡РµРЅРёРµ СѓСЂРѕРЅР°
             if (TryGetComponent(out UnityEngine.AI.NavMeshAgent agent)) agent.enabled = false;
             if (TryGetComponent(out Collider col)) col.enabled = false;
 
-            // Опционально: поворачиваем модель, чтобы она упала (если нет анимации смерти)
+            // РћРїС†РёРѕРЅР°Р»СЊРЅРѕ: РїРѕРІРѕСЂР°С‡РёРІР°РµРј РјРѕРґРµР»СЊ, С‡С‚РѕР±С‹ РѕРЅР° СѓРїР°Р»Р° (РµСЃР»Рё РЅРµС‚ Р°РЅРёРјР°С†РёРё СЃРјРµСЂС‚Рё)
             transform.Rotate(Vector3.right, 90f);
 
-            // 4. В будущем здесь мы повесим скрипт для лута (обыск трупа)
-            Debug.Log("[Враг] Превратился в труп. Можно добавить логику обыска.");
+            // 4. Р’ Р±СѓРґСѓС‰РµРј Р·РґРµСЃСЊ РјС‹ РїРѕРІРµСЃРёРј СЃРєСЂРёРїС‚ РґР»СЏ Р»СѓС‚Р° (РѕР±С‹СЃРє С‚СЂСѓРїР°)
+            Debug.Log("[Р’СЂР°Рі] РџСЂРµРІСЂР°С‚РёР»СЃСЏ РІ С‚СЂСѓРї. РњРѕР¶РЅРѕ РґРѕР±Р°РІРёС‚СЊ Р»РѕРіРёРєСѓ РѕР±С‹СЃРєР°.");
 
-            // (УДАЛИЛИ Destroy(gameObject, 2f) - теперь труп остается навсегда)
+            // (РЈР”РђР›РР›Р Destroy(gameObject, 2f) - С‚РµРїРµСЂСЊ С‚СЂСѓРї РѕСЃС‚Р°РµС‚СЃСЏ РЅР°РІСЃРµРіРґР°)
         }
     }
 }

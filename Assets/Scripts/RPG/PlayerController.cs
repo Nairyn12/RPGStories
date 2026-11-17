@@ -15,6 +15,7 @@ namespace Game.RPG
         [SerializeField] private CombatState combatState;
         [SerializeField] private LayerMask groundLayer;
         [SerializeField] private Transform groundCheckPoint;
+        [SerializeField] private PlayerInventory inventory;
 
         [Header("Movement Settings")]
         [SerializeField] private float walkSpeed = 3f;
@@ -75,21 +76,88 @@ namespace Game.RPG
             _rb.interpolation = RigidbodyInterpolation.Interpolate;
             _capsule = GetComponent<CapsuleCollider>();
             _controls = new PlayerControls();
+
+            // АВТОПОИСК (если ссылки потерялись)
+            if (stats == null) stats = FindFirstObjectByType<PlayerStats>();
+            if (stamina == null) stamina = FindFirstObjectByType<PlayerStamina>();
+            if (health == null) health = FindFirstObjectByType<PlayerHealth>();
+            if (playerCombat == null) playerCombat = FindFirstObjectByType<PlayerCombat>();
+            if (combatState == null) combatState = FindFirstObjectByType<CombatState>();
+            if (inventory == null) inventory = FindFirstObjectByType<PlayerInventory>();
+        }
+
+        /// ==========================================
+        // ОБРАБОТЧИКИ ХОТБАРА
+        // ==========================================
+
+        private void HandleSlot1(InputAction.CallbackContext ctx) => UseHotbar(0);
+        private void HandleSlot2(InputAction.CallbackContext ctx) => UseHotbar(1);
+        private void HandleSlot3(InputAction.CallbackContext ctx) => UseHotbar(2);
+        private void HandleSlot4(InputAction.CallbackContext ctx) => UseHotbar(3);
+        private void HandleSlot5(InputAction.CallbackContext ctx) => UseHotbar(4);
+        private void HandleSlot6(InputAction.CallbackContext ctx) => UseHotbar(5);
+        private void HandleSlot7(InputAction.CallbackContext ctx) => UseHotbar(6);
+        private void HandleSlot8(InputAction.CallbackContext ctx) => UseHotbar(7);
+
+        private void UseHotbar(int index)
+        {
+            // 1. Если мышка наведена на слот в инвентаре - назначаем предмет в хотбар
+            if (InventorySlotUI.CurrentlyHoveredSlot != null)
+            {
+                if (InventorySlotUI.CurrentlyHoveredSlot.Slot != null && InventorySlotUI.CurrentlyHoveredSlot.Slot.Item != null)
+                {
+                    inventory.SetQuickSlot(index, InventorySlotUI.CurrentlyHoveredSlot.Slot);
+                    Debug.Log($"[Hotbar] Предмет назначен на кнопку {index + 1}");
+                    return; // Выходим, чтобы не использовать предмет
+                }
+            }
+
+            // 2. Если инвентарь закрыт - используем предмет из хотбара
+            if (Time.timeScale > 0f)
+            {
+                inventory.UseQuickSlot(index);
+            }
         }
 
         private void OnEnable()
         {
+            // Включаем основное управление
             _controls.Player.Enable();
+
+            // Включаем управление хотбаром
+            _controls.Hotbar.Enable();
+
             _controls.Player.Sprint.started += ctx => _isSprintHeld = true;
             _controls.Player.Sprint.canceled += ctx => _isSprintHeld = false;
 
             _controls.Player.Crouch.performed += ctx => ToggleCrouch();
             _controls.Player.JumpOrDodge.performed += ctx => HandleJumpOrDodge();
+
+            // Подписываемся на слоты хотбара (1-8)
+            _controls.Hotbar.Slot1.performed += HandleSlot1;
+            _controls.Hotbar.Slot2.performed += HandleSlot2;
+            _controls.Hotbar.Slot3.performed += HandleSlot3;
+            _controls.Hotbar.Slot4.performed += HandleSlot4;
+            _controls.Hotbar.Slot5.performed += HandleSlot5;
+            _controls.Hotbar.Slot6.performed += HandleSlot6;
+            _controls.Hotbar.Slot7.performed += HandleSlot7;
+            _controls.Hotbar.Slot8.performed += HandleSlot8;
         }
 
         private void OnDisable()
         {
             _controls.Player.Disable();
+            _controls.Hotbar.Disable(); // Выключаем карту
+
+            // Отписываемся от событий
+            _controls.Hotbar.Slot1.performed -= HandleSlot1;
+            _controls.Hotbar.Slot2.performed -= HandleSlot2;
+            _controls.Hotbar.Slot3.performed -= HandleSlot3;
+            _controls.Hotbar.Slot4.performed -= HandleSlot4;
+            _controls.Hotbar.Slot5.performed -= HandleSlot5;
+            _controls.Hotbar.Slot6.performed -= HandleSlot6;
+            _controls.Hotbar.Slot7.performed -= HandleSlot7;
+            _controls.Hotbar.Slot8.performed -= HandleSlot8;
         }
 
         private void Start()

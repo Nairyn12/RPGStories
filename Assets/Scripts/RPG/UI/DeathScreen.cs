@@ -10,8 +10,10 @@ namespace Game.RPG
 
         private void Start()
         {
-            if (playerHealth != null)
-                playerHealth.OnDeath += ShowScreen;
+            if (playerHealth == null) playerHealth = FindFirstObjectByType<PlayerHealth>();
+            if (saveManager == null) saveManager = FindFirstObjectByType<SaveManager>();
+
+            if (playerHealth != null) playerHealth.OnDeath += ShowScreen;
         }
 
         private void OnDestroy()

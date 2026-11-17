@@ -6,8 +6,9 @@ namespace Game.RPG
     public class EnemyDataSO : ScriptableObject
     {
         [Header("Identity")]
+        public string EnemyId = "wolf"; // <-- НОВОЕ ПОЛЕ (для квестов)
         public string EnemyName = "Wolf";
-        public int EnemyLevel = 1; // Для отображения над головой (например, "Волк [1]")
+        public int EnemyLevel = 1;
 
         [Header("Stats")]
         public float MaxHealth = 50f;
@@ -25,7 +26,7 @@ namespace Game.RPG
         public float FieldOfView = 120f;
 
         [Header("Rewards")]
-        [Tooltip("Сколько опыта дает этот враг (фиксированное число)")]
+        [Tooltip("Сколько опыта дает этот враг")]
         public int XpReward = 50;
     }
 }

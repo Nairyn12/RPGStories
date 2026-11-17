@@ -17,6 +17,10 @@ namespace Game.RPG
         [SerializeField] private float testValue = 1f;
         [SerializeField] private ModifierType testType = ModifierType.Flat;
 
+        [Header("Reputation Test")]
+        [SerializeField] private ReputationManager reputationManager;
+        [SerializeField] private FactionDataSO testFaction; // Перетащи сюда Faction_Village
+
         private int _testCounter;
 
         private void OnGUI()
@@ -91,6 +95,13 @@ namespace Game.RPG
             if (GUILayout.Button("LOAD GAME") && saveManager != null) saveManager.LoadGame();
 
             GUILayout.EndArea();
+
+            // Вывод репутации
+            if (reputationManager != null && testFaction != null)
+            {
+                int rep = reputationManager.GetReputation(testFaction);
+                GUILayout.Label($"Reputation ({testFaction.FactionName}): {rep}");
+            }
         }
 
         private void AddTestModifier()

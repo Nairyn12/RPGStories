@@ -1,4 +1,4 @@
-using System;
+п»їusing System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -9,11 +9,11 @@ namespace Game.RPG
         [Header("Settings")]
         [SerializeField] private Transform cameraTransform;
         [SerializeField] private float interactDistance = 15f;
-        [SerializeField] private LayerMask interactLayer; // Слой, на котором лежат предметы
+        [SerializeField] private LayerMask interactLayer; // РЎР»РѕР№, РЅР° РєРѕС‚РѕСЂРѕРј Р»РµР¶Р°С‚ РїСЂРµРґРјРµС‚С‹
         [SerializeField] private float rayStartOffset = 1f;
 
         //[Header("UI Events")]
-        public event Action<string> OnInteractPromptChanged; // Событие для UI
+        public event Action<string> OnInteractPromptChanged; // РЎРѕР±С‹С‚РёРµ РґР»СЏ UI
 
         private PlayerControls _controls;
         private IInteractable _currentInteractable;
@@ -21,6 +21,9 @@ namespace Game.RPG
         private void Awake()
         {
             _controls = new PlayerControls();
+
+            // РђР’РўРћРџРћРРЎРљ
+            if (cameraTransform == null && Camera.main != null) cameraTransform = Camera.main.transform;
         }
 
         private void OnEnable()
@@ -37,20 +40,32 @@ namespace Game.RPG
 
         private void Update()
         {
+            // рџ›  Р¤РРљРЎ РџРћР”РЎРљРђР—РљР: Р•СЃР»Рё РёРґРµС‚ РґРёР°Р»РѕРі - РїСЂСЏС‡РµРј РїРѕРґСЃРєР°Р·РєСѓ Рё РІС‹С…РѕРґРёРј
+            if (DialogueRunner.IsDialogueActive)
+            {
+                if (_currentInteractable != null)
+                {
+                    _currentInteractable = null;
+                    OnInteractPromptChanged?.Invoke(null); // РћС‡РёС‰Р°РµРј С‚РµРєСЃС‚ РїРѕРґСЃРєР°Р·РєРё
+                }
+                return; // РќРµ РїСѓСЃРєР°РµРј Р»СѓС‡, РїРѕРєР° РёРґРµС‚ РґРёР°Р»РѕРі
+            }
+
             if (cameraTransform == null) return;
 
-            // Луч всегда летит ИЗ КАМЕРЫ (она двигается вместе с игроком)
             Ray ray = new Ray(cameraTransform.position, cameraTransform.forward);
-
-            // Используем interactLayer. Благодаря этому луч пролетит СКВОЗЬ коллайдер игрока,
-            // если слой Player не выбран в этой маске.
             bool hitSomething = Physics.Raycast(ray, out RaycastHit hit, interactDistance, interactLayer);
 
-            Color rayColor = hitSomething ? Color.green : Color.red;
-            Debug.DrawRay(cameraTransform.position, cameraTransform.forward * interactDistance, rayColor);
-
+            // Р•СЃР»Рё РјС‹ РїРѕРїР°Р»Рё РІ РѕР±СЉРµРєС‚ Рё С‚Р°Рј РµСЃС‚СЊ IInteractable
             if (hitSomething && hit.collider.TryGetComponent(out IInteractable interactable))
             {
+                // РџСЂРѕРІРµСЂРєР° РЅР° "С„РµР№РєРѕРІС‹Р№ РЅСѓР»Р»": РµСЃР»Рё РѕР±СЉРµРєС‚ СѓРЅРёС‡С‚РѕР¶РµРЅ, Unity РІРµСЂРЅРµС‚ true РґР»СЏ СЌС‚РѕРіРѕ С‚РµСЃС‚Р°
+                if (interactable is UnityEngine.Object obj && obj == null)
+                {
+                    ClearCurrentInteractable();
+                    return;
+                }
+
                 if (_currentInteractable != interactable)
                 {
                     _currentInteractable = interactable;
@@ -59,11 +74,7 @@ namespace Game.RPG
                 return;
             }
 
-            if (_currentInteractable != null)
-            {
-                _currentInteractable = null;
-                OnInteractPromptChanged?.Invoke(null);
-            }
+            ClearCurrentInteractable();
         }
 
         private void OnInteractPressed(InputAction.CallbackContext ctx)
@@ -71,6 +82,16 @@ namespace Game.RPG
             if (_currentInteractable != null)
             {
                 _currentInteractable.Interact(gameObject);
+                ClearCurrentInteractable(); // РњРіРЅРѕРІРµРЅРЅРѕ РѕС‡РёС‰Р°РµРј РїРѕСЃР»Рµ РїРѕРґР±РѕСЂР°
+            }
+        }
+
+        private void ClearCurrentInteractable()
+        {
+            if (_currentInteractable != null)
+            {
+                _currentInteractable = null;
+                OnInteractPromptChanged?.Invoke(null);
             }
         }
     }

@@ -28,6 +28,12 @@ namespace Game.RPG
         private void Awake()
         {
             _controls = new PlayerControls();
+
+            // АВТОПОИСК
+            if (stats == null) stats = FindFirstObjectByType<PlayerStats>();
+            if (stamina == null) stamina = FindFirstObjectByType<PlayerStamina>();
+            if (combatState == null) combatState = FindFirstObjectByType<CombatState>();
+            if (playerController == null) playerController = GetComponent<PlayerController>();
         }
 
         private void OnEnable()
@@ -49,6 +55,16 @@ namespace Game.RPG
 
         private void TryAttack()
         {
+            // Если идет диалог - блокируем атаку
+            if (DialogueRunner.IsDialogueActive) return;
+
+            // 1. Если игра на паузе (открыт инвентарь) - не атакуем
+            if (Time.timeScale == 0f) return;
+
+            // 2. Если курсор мыши над UI (инвентарем, кнопками) - не атакуем
+            if (UnityEngine.EventSystems.EventSystem.current != null &&
+                UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject()) return;
+
             // 1. Проверяем, не в воздухе ли мы (блокировка атаки в прыжке)
             if (!playerController.IsGrounded) return;
 
@@ -82,6 +98,12 @@ namespace Game.RPG
 
             // 7. Запускаем таймер окончания атаки
             StartCoroutine(AttackRoutine());
+        }
+
+        public void EquipWeapon(WeaponItemSO newWeapon)
+        {
+            currentWeapon = newWeapon;
+            Debug.Log($"[Combat] Экипировано оружие: {(newWeapon != null ? newWeapon.ItemName : "Кулаки")}");
         }
 
         private IEnumerator AttackRoutine()

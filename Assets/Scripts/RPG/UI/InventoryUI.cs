@@ -15,6 +15,7 @@ namespace Game.RPG
         private List<InventorySlotUI> _spawnedSlots = new();
         private bool _isOpen = false;
         private PlayerControls _controls; // <-- ДОБАВИТЬ
+        private bool _isDirty;
 
         private void Awake()
         {
@@ -35,8 +36,10 @@ namespace Game.RPG
 
         private void Start()
         {
+            if (inventory == null) inventory = FindFirstObjectByType<PlayerInventory>();
+
             if (inventory != null)
-                inventory.OnInventoryChanged += UpdateUI;
+                inventory.OnInventoryChanged += MarkDirty;
 
             inventoryPanel.SetActive(false);
             _isOpen = false;
@@ -44,70 +47,101 @@ namespace Game.RPG
 
         private void OnDestroy()
         {
-            if (inventory != null)
-                inventory.OnInventoryChanged -= UpdateUI;
+            if (inventory != null) inventory.OnInventoryChanged -= MarkDirty;
+        }
+
+        // Вместо прямого вызова UpdateUI, мы просто ставим флаг
+        // Вместо прямого вызова UpdateUI, мы просто ставим флаг
+        private void MarkDirty()
+        {
+            if (_isOpen) _isDirty = true;
         }
 
         // Обработчик нажатия кнопки
         private void OnToggleInventory(InputAction.CallbackContext ctx)
         {
+            // Запрещаем открывать инвентарь во время диалога
+            if (DialogueRunner.IsDialogueActive) return;
+
             ToggleInventory();
         }
 
         public void ToggleInventory()
         {
-            if (inventoryPanel == null)
-            {
-                Debug.LogError("[InventoryUI] Поле Inventory Panel не назначено в инспекторе!");
-                return;
-            }
-
             _isOpen = !_isOpen;
             inventoryPanel.SetActive(_isOpen);
 
             if (_isOpen)
             {
                 UpdateUI();
-                Time.timeScale = 0f; // Останавливаем время
+                Time.timeScale = 0f;
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
-                Debug.Log("[InventoryUI] Инвентарь открыт.");
             }
             else
             {
                 Time.timeScale = 1f;
                 Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;
-                Debug.Log("[InventoryUI] Инвентарь закрыт.");
             }
         }
 
         private void UpdateUI()
         {
-            // 1. Очищаем старые слоты (открепляем их, чтобы сетка не видела их)
-            foreach (Transform child in gridParent)
+            if (inventory == null || gridParent == null || slotPrefab == null)
             {
-                child.SetParent(null); // Мгновенно убираем из сетки
-                Destroy(child.gameObject); // Удаляем в конце кадра
+                Debug.LogError("[InventoryUI] Не назначены ссылки в инспекторе! UI не может обновиться.");
+                return;
             }
-            _spawnedSlots.Clear();
 
-            // 2. Создаем новые слоты на основе данных инвентаря
-            foreach (var slotData in inventory.Slots)
+            if (TooltipManager.Instance != null) TooltipManager.Instance.HideTooltip();
+
+            foreach (var slot in _spawnedSlots)
             {
-                GameObject slotObj = Instantiate(slotPrefab, gridParent);
-                if (slotObj.TryGetComponent(out InventorySlotUI slotUI))
+                if (slot != null) slot.gameObject.SetActive(false);
+            }
+
+            for (int i = 0; i < inventory.Slots.Count; i++)
+            {
+                InventorySlotUI slotUI;
+                if (i < _spawnedSlots.Count)
                 {
-                    slotUI.Setup(slotData);
-                    slotUI.OnSlotClicked += HandleSlotClicked;
+                    slotUI = _spawnedSlots[i];
+                }
+                else
+                {
+                    GameObject slotObj = Instantiate(slotPrefab, gridParent);
+                    slotUI = slotObj.GetComponent<InventorySlotUI>();
                     _spawnedSlots.Add(slotUI);
                 }
+
+                slotUI.gameObject.SetActive(true);
+                slotUI.transform.SetAsLastSibling();
+                slotUI.Setup(inventory.Slots[i], inventory);
             }
         }
 
-        private void HandleSlotClicked(InventorySlotUI slot)
+        public void ForceUpdateUI()
         {
-            Debug.Log($"[UI] Клик по предмету: {slot.Item.ItemName}");
+            inventory = FindFirstObjectByType<PlayerInventory>();
+            if (inventory != null)
+            {
+                // Отписываемся и подписываемся заново, чтобы не было дублей
+                inventory.OnInventoryChanged -= MarkDirty;
+                inventory.OnInventoryChanged += MarkDirty;
+            }
+            UpdateUI();
+            Debug.Log("[InventoryUI] Ссылки и UI обновлены.");
+        }
+
+        private void LateUpdate()
+        {
+            // Выполняем перестройку ровно один раз в конце кадра, если были изменения
+            if (_isDirty && _isOpen)
+            {
+                _isDirty = false;
+                UpdateUI();
+            }
         }
     }
 }

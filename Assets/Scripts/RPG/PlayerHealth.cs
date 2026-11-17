@@ -18,6 +18,10 @@ namespace Game.RPG
         private float _lastDamageTime = -999f;
         [SerializeField] private float invulnerabilityDuration = 0.5f; // Неуязвимость полсекунды
 
+        // 1. Добавь переменную в начало класса
+        private Coroutine _healCoroutine;
+
+
         public float CurrentHealth => currentHealth;
         public float MaxHealth => _stats.GetStat(StatType.HealthMax);
         public bool IsDead => currentHealth <= 0;
@@ -65,7 +69,18 @@ namespace Game.RPG
             currentHealth = Mathf.Max(currentHealth - amount, 0);
             NotifyHealthChanged();  
             OnDamaged?.Invoke(); // <-- ДОБАВИТЬ ВЫЗОВ СОБЫТИЯ
-            if (IsDead) OnDeath?.Invoke();
+            if (IsDead)
+            {
+                // ЖЕСТКАЯ ОСТАНОВКА: Если мы умерли, зелье больше не работает
+                if (_healCoroutine != null)
+                {
+                    StopCoroutine(_healCoroutine);
+                    _healCoroutine = null;
+                }
+
+                OnDeath?.Invoke();
+            } 
+                
         }
 
         public void Heal(float amount)
@@ -100,5 +115,30 @@ namespace Game.RPG
 
         [Serializable]
         private class HealthData { public float Health; }
+
+        public void HealOverTime(float totalAmount, float duration)
+        {
+            if (IsDead || totalAmount <= 0) return;
+
+            // Если предыдущее зелье еще работает - останавливаем его
+            if (_healCoroutine != null) StopCoroutine(_healCoroutine);
+
+            _healCoroutine = StartCoroutine(HealRoutine(totalAmount, duration));
+        }
+
+        private System.Collections.IEnumerator HealRoutine(float totalAmount, float duration)
+        {
+            float amountPerSecond = totalAmount / duration;
+            float timeElapsed = 0f;
+
+            while (timeElapsed < duration && !IsDead && currentHealth < MaxHealth)
+            {
+                float amountToHeal = amountPerSecond * Time.deltaTime;
+                Heal(amountToHeal);
+                timeElapsed += Time.deltaTime;
+                yield return null;
+            }
+            _healCoroutine = null; // Очищаем ссылку, когда закончили
+        }
     }
 }

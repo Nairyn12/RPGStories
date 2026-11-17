@@ -1,0 +1,94 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb313c2e9f99bd94db11cab596ad5997, type: 3}
+  m_Name: Dialogue_Test
+  m_EditorClassIdentifier: Assembly-CSharp::Game.RPG.DialogueSO
+  NpcName: "\u0421\u0442\u0430\u0440\u043E\u0441\u0442\u0430"
+  Nodes:
+  - NpcText: "\u041F\u0440\u0438\u0432\u0435\u0442\u0441\u0442\u0432\u0443\u044E
+      \u0442\u0435\u0431\u044F, \u043D\u0430\u0448 \u0441\u043F\u0430\u0441\u0438\u0442\u0435\u043B\u044C!"
+    Conditions:
+    - {fileID: 11400000, guid: d4210796789e4b640a66a527384cf05a, type: 2}
+    - {fileID: 11400000, guid: c1be490b41ae61c4eb3d58ce62b3b4d4, type: 2}
+    OnEnterActions:
+    - {fileID: 11400000, guid: 1f084f16e7bec4d4fbf47c60825f9cee, type: 2}
+    Choices: []
+    EndDialogueHere: 1
+  - NpcText: "\u0418 \u0442\u044B \u043F\u043E\u0441\u043C\u0435\u043B \u0441\u043D\u043E\u0432\u0430
+      \u0441\u044E\u0434\u0430\u0430 \u044F\u0432\u0438\u0442\u044C\u0441\u044F?
+      \u041F\u043E\u0441\u043B\u0435 \u0442\u043E\u0433\u043E, \u0447\u0442\u043E
+      \u0441\u0434\u0435\u043B\u0430\u043B?"
+    Conditions:
+    - {fileID: 11400000, guid: 03dbbe465e1ae37498a5617a3e7336cf, type: 2}
+    OnEnterActions: []
+    Choices: []
+    EndDialogueHere: 1
+  - NpcText: "\u041F\u0440\u0438\u0432\u0435\u0442\u0441\u0442\u0432\u0443\u044E,
+      \u0441\u043B\u0443\u0436\u0438\u0442\u0435\u043B\u044C \u0422\u0435\u043C\u0438\u043E\u0441\u0430.
+      \u0423 \u043D\u0430\u0441 \u0431\u0435\u0434\u0430.."
+    Conditions:
+    - {fileID: 11400000, guid: c1be490b41ae61c4eb3d58ce62b3b4d4, type: 2}
+    OnEnterActions: []
+    Choices:
+    - ChoiceText: "\u042F \u043D\u0430\u0439\u0434\u0443 \u0435\u0433\u043E!"
+      NextNodeIndex: 3
+      Conditions: []
+      Actions:
+      - {fileID: 11400000, guid: 8b26a2608bbfb374a86fc73e16152a00, type: 2}
+    - ChoiceText: "\u0421\u0430\u043C\u0438 \u0438\u0449\u0438\u0442\u0435 \u0441\u0432\u043E\u0435\u0433\u043E
+        \u0441\u0442\u0430\u0440\u0438\u043A\u0430!"
+      NextNodeIndex: 4
+      Conditions: []
+      Actions:
+      - {fileID: 11400000, guid: 824803dd4cdba1941b320c4ae6ad75e6, type: 2}
+    EndDialogueHere: 0
+  - NpcText: "\u0421\u043F\u0430\u0441\u0438\u0431\u043E \u0442\u0435\u0431\u0435!"
+    Conditions:
+    - {fileID: 11400000, guid: c1be490b41ae61c4eb3d58ce62b3b4d4, type: 2}
+    OnEnterActions: []
+    Choices: []
+    EndDialogueHere: 1
+  - NpcText: "\u041D\u0435 \u0440\u0430\u0434\u044B \u043C\u044B \u0442\u0435\u0431\u0435!"
+    Conditions:
+    - {fileID: 11400000, guid: c1be490b41ae61c4eb3d58ce62b3b4d4, type: 2}
+    OnEnterActions: []
+    Choices: []
+    EndDialogueHere: 1
+  - NpcText: "\u0422\u044B \u0443\u0436\u0435 \u0440\u0430\u0437\u043E\u0431\u0440\u0430\u043B\u0441\u044F
+      \u0441 \u0432\u043E\u043B\u043A\u043E\u043C?"
+    Conditions:
+    - {fileID: 11400000, guid: d4210796789e4b640a66a527384cf05a, type: 2}
+    - {fileID: 11400000, guid: 73362f29bf46c1a47873733a3351a370, type: 2}
+    OnEnterActions: []
+    Choices:
+    - ChoiceText: "[\u0421\u0434\u0430\u0442\u044C \u043A\u0432\u0435\u0441\u0442]
+        \u0414\u0430, \u0432\u043E\u043B\u043A \u043C\u0435\u0440\u0442\u0432."
+      NextNodeIndex: 6
+      Conditions:
+      - {fileID: 11400000, guid: 2c052e37143ba314893dcc8561c5d490, type: 2}
+      Actions:
+      - {fileID: 11400000, guid: c3a8ef810dc7def45b9198ba387a5a62, type: 2}
+    - ChoiceText: "\u041F\u043E\u043A\u0430 \u043D\u0435\u0442"
+      NextNodeIndex: 7
+      Conditions: []
+      Actions: []
+    EndDialogueHere: 0
+  - NpcText: "\u0421\u043F\u0430\u0441\u0438\u0431\u043E!"
+    Conditions: []
+    OnEnterActions: []
+    Choices: []
+    EndDialogueHere: 1
+  - NpcText: "\u0416\u0434\u0435\u043C,  \u043A\u043E\u0433\u0434\u0430 \u0440\u0430\u0437\u0431\u0435\u0440\u0435\u0448\u044C\u0441\u044F!"
+    Conditions: []
+    OnEnterActions: []
+    Choices: []
+    EndDialogueHere: 1

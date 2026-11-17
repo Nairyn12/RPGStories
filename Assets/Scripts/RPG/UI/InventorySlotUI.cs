@@ -1,52 +1,103 @@
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Game.RPG
 {
-    public class InventorySlotUI : MonoBehaviour, IPointerClickHandler
+    public class InventorySlotUI : MonoBehaviour, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerEnterHandler, IPointerExitHandler
     {
         [Header("UI Elements")]
         [SerializeField] private Image iconImage;
         [SerializeField] private TextMeshProUGUI amountText;
+        [SerializeField] private Outline borderImage;        // <-- Синяя рамка
+        [SerializeField] private TextMeshProUGUI hotbarText; // <-- Циферка хотбара
 
-        private ItemDataSO _item;
-        private int _amount;
+        public static InventorySlotUI CurrentlyHoveredSlot { get; private set; }
 
-        // ������� ��� ����� �� ���� (���������� ���� � ���� UI-������)
-        public System.Action<InventorySlotUI> OnSlotClicked;
+        public PlayerInventory.InventorySlot Slot { get; private set; }
 
-        public ItemDataSO Item => _item;
+        private PlayerInventory _inventory;
+        private GameObject _dragIcon;
 
-        public void Setup(PlayerInventory.InventorySlot slot)
+        public void Setup(PlayerInventory.InventorySlot slot, PlayerInventory inventory)
         {
-            if (slot == null || slot.Item == null)
-            {
-                _item = null;
-                _amount = 0;
-                iconImage.gameObject.SetActive(false);
-                amountText.text = "";
-                return;
-            }
+            _inventory = inventory;
+            Slot = slot;
 
-            _item = slot.Item;
-            _amount = slot.Amount;
+            if (Slot == null || Slot.Item == null) return;
 
             iconImage.gameObject.SetActive(true);
-            iconImage.sprite = _item.Icon;
+            iconImage.sprite = Slot.Item.Icon;
+            iconImage.raycastTarget = false;
 
-            if (_amount > 1)
-                amountText.text = _amount.ToString();
-            else
-                amountText.text = "";
+            amountText.text = Slot.Amount > 1 ? Slot.Amount.ToString() : "";
+            amountText.raycastTarget = false;
+
+            // Визуал: Рамка экипировки и цифра хотбара
+            if (borderImage != null) borderImage.enabled = Slot.EquippedSlot != EquipmentType.None;
+            if (hotbarText != null)
+            {
+                hotbarText.gameObject.SetActive(Slot.HotbarIndex != -1);
+                if (Slot.HotbarIndex != -1) hotbarText.text = (Slot.HotbarIndex + 1).ToString(); // +1 чтобы было 1-8, а не 0-7
+            }
         }
 
         public void OnPointerClick(PointerEventData eventData)
         {
-            if (_item != null)
+            if (Slot == null || Slot.Item == null) return;
+            if (eventData.clickCount == 2) _inventory.UseItem(Slot);
+        }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            CurrentlyHoveredSlot = this; // <-- Запоминаем слот
+
+            if (Slot != null && Slot.Item != null && TooltipManager.Instance != null)
+                TooltipManager.Instance.ShowTooltip(Slot.Item, transform.position);
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            // Если мышка ушла с этого слота - очищаем
+            if (CurrentlyHoveredSlot == this) CurrentlyHoveredSlot = null;
+
+            if (TooltipManager.Instance != null) TooltipManager.Instance.HideTooltip();
+        }
+
+        // ==== DRAG & DROP ====
+        public void OnBeginDrag(PointerEventData eventData)
+        {
+            if (Slot == null || Slot.Item == null) return;
+            TooltipManager.Instance.HideTooltip();
+            iconImage.color = new Color(1, 1, 1, 0.5f);
+
+            _dragIcon = new GameObject("DragIcon");
+            _dragIcon.transform.SetParent(GetComponentInParent<Canvas>().transform, false);
+            Image img = _dragIcon.AddComponent<Image>();
+            img.sprite = Slot.Item.Icon;
+            img.raycastTarget = false;
+
+            RectTransform rect = _dragIcon.GetComponent<RectTransform>();
+            rect.sizeDelta = new Vector2(80, 80);
+            _dragIcon.transform.SetAsLastSibling();
+        }
+
+        public void OnDrag(PointerEventData eventData)
+        {
+            if (_dragIcon != null) _dragIcon.transform.position = eventData.position;
+        }
+
+        public void OnEndDrag(PointerEventData eventData)
+        {
+            if (_dragIcon != null) Destroy(_dragIcon);
+            if (iconImage != null) iconImage.color = Color.white;
+            if (Slot == null || Slot.Item == null) return;
+
+            // Если мышь не над UI (над панелями) - выбрасываем
+            if (!EventSystem.current.IsPointerOverGameObject())
             {
-                OnSlotClicked?.Invoke(this);
+                _inventory.DropItem(Slot, 1);
             }
         }
     }
