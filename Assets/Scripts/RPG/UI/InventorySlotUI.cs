@@ -94,6 +94,24 @@ namespace Game.RPG
             if (iconImage != null) iconImage.color = Color.white;
             if (Slot == null || Slot.Item == null) return;
 
+            // Если мы попали в слот сундука — перемещаем туда
+            if (eventData.pointerEnter != null && eventData.pointerEnter.TryGetComponent(out ChestSlotUI chestSlot))
+            {
+                var chest = FindFirstObjectByType<ChestUI>(); // Или передать через ссылку
+                if (chest != null && chestSlot.Slot != null)
+                {
+                    // Находим сам сундук через UI
+                    var currentChest = chestSlot.GetComponentInParent<ChestUI>();
+                    // Упрощенно: просто добавим в сундук через InventorySlotUI
+                    var chestComponent = chestSlot.Slot.Item != null ? chestSlot.GetComponentInParent<Chest>() : null;
+                    if (chestComponent != null)
+                    {
+                        chestComponent.AddItem(Slot.Item, Slot.Amount);
+                        _inventory.RemoveItem(Slot, Slot.Amount);
+                    }
+                }
+            }
+
             // Если мышь не над UI (над панелями) - выбрасываем
             if (!EventSystem.current.IsPointerOverGameObject())
             {
