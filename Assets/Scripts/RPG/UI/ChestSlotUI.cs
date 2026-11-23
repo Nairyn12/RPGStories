@@ -1,4 +1,4 @@
-using TMPro;
+п»їusing TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -9,7 +9,6 @@ namespace Game.RPG
     {
         [SerializeField] private Image iconImage;
         [SerializeField] private TextMeshProUGUI amountText;
-        [SerializeField] private Outline borderImage;
 
         public PlayerInventory.InventorySlot Slot { get; private set; }
         private Chest _chest;
@@ -29,9 +28,9 @@ namespace Game.RPG
             amountText.raycastTarget = false;
         }
 
-        // Быстрое перемещение по клику (в инвентарь)
         public void OnPointerClick(PointerEventData eventData)
         {
+            if (TooltipManager.Instance != null) TooltipManager.Instance.HideTooltip();
             if (Slot == null || Slot.Item == null) return;
 
             var inventory = FindFirstObjectByType<PlayerInventory>();
@@ -53,11 +52,11 @@ namespace Game.RPG
             if (TooltipManager.Instance != null) TooltipManager.Instance.HideTooltip();
         }
 
-        // ==== DRAG & DROP ====
         public void OnBeginDrag(PointerEventData eventData)
         {
+            if (TooltipManager.Instance != null) TooltipManager.Instance.HideTooltip();
             if (Slot == null || Slot.Item == null) return;
-            TooltipManager.Instance.HideTooltip();
+
             iconImage.color = new Color(1, 1, 1, 0.5f);
 
             _dragIcon = new GameObject("DragIcon_Chest");
@@ -79,15 +78,14 @@ namespace Game.RPG
         public void OnEndDrag(PointerEventData eventData)
         {
             if (_dragIcon != null) Destroy(_dragIcon);
-            iconImage.color = Color.white;
+            if (iconImage != null) iconImage.color = Color.white;
+            if (TooltipManager.Instance != null) TooltipManager.Instance.HideTooltip();
 
             if (Slot == null || Slot.Item == null) return;
 
-            // Если мы бросили предмет НЕ на этот слот и НЕ на инвентарь — ничего не делаем (возврат)
-            if (eventData.pointerEnter == null) return;
-
-            // Если бросили на инвентарь — перемещаем туда
-            if (eventData.pointerEnter.TryGetComponent(out InventorySlotUI invSlotUI))
+            // рџ›  Р¤РРљРЎ: РџСЂРѕРІРµСЂСЏРµРј РєРѕРѕСЂРґРёРЅР°С‚С‹ РєСѓСЂСЃРѕСЂР°, Р° РЅРµ РѕР±СЉРµРєС‚ РїРѕРґ РЅРёРј. 
+            // РўРµРїРµСЂСЊ СЂР°Р±РѕС‚Р°РµС‚ РґР°Р¶Рµ РµСЃР»Рё РёРЅРІРµРЅС‚Р°СЂСЊ РїСѓСЃС‚!
+            if (InventoryUI.Instance != null && InventoryUI.Instance.IsPointerOverInventory(eventData.position, eventData.pressEventCamera))
             {
                 var inventory = FindFirstObjectByType<PlayerInventory>();
                 if (inventory != null)

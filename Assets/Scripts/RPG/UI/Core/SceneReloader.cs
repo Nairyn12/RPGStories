@@ -29,7 +29,7 @@ namespace Game.RPG
 
             // 2. »щем UI и принудительно обновл€ем
             var inventoryUI = FindFirstObjectByType<InventoryUI>();
-            if (inventoryUI != null) inventoryUI.ForceUpdateUI();
+            if (inventoryUI != null) inventoryUI.UpdateUI();
 
             var equipmentSlots = FindObjectsByType<EquipmentSlotUI>(FindObjectsSortMode.None);
             foreach (var eq in equipmentSlots) eq.UpdateUI();

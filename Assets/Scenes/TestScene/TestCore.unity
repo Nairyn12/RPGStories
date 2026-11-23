@@ -1925,7 +1925,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 0}
-  m_RaycastTarget: 0
+  m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -5699,7 +5699,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1570880013
 RectTransform:
   m_ObjectHideFlags: 0
@@ -7696,8 +7696,7 @@ MonoBehaviour:
   chestPanel: {fileID: 1570880012}
   chestGridParent: {fileID: 1343713104}
   chestSlotPrefab: {fileID: 6171901305039575368, guid: 40fe453e4d18de64c9088f657d59062e, type: 3}
-  playerInventory: {fileID: 1576089506}
-  inventoryPanel: {fileID: 632935663}
+  characterPanel: {fileID: 1123545640}
 --- !u!4 &1844787553 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4957605393579145646, guid: 4f46098734d87e24490aef9267915ad2, type: 3}

@@ -6,12 +6,16 @@ namespace Game.RPG
 {
     public class ChestUI : MonoBehaviour
     {
+        public static ChestUI Instance { get; private set; }
+
         [Header("References")]
         [SerializeField] private GameObject chestPanel;
         [SerializeField] private Transform chestGridParent;
         [SerializeField] private GameObject chestSlotPrefab;
-        [SerializeField] private PlayerInventory playerInventory;
-        [SerializeField] private GameObject inventoryPanel;
+        [SerializeField] private GameObject characterPanel;
+
+        public bool IsOpen { get; private set; } = false;
+        public Chest CurrentChest => _currentChest; // 🛠 Доступ для Drag & Drop
 
         private Chest _currentChest;
         private List<ChestSlotUI> _spawnedSlots = new();
@@ -19,32 +23,31 @@ namespace Game.RPG
 
         private void Awake()
         {
+            if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+            Instance = this;
             _controls = new PlayerControls();
         }
 
         private void OnEnable()
         {
             _controls.Player.Enable();
-            // 🛠 ИСПРАВЛЕНО: Подписываемся на отдельный метод
             _controls.Player.Cancel.performed += OnCancelPressed;
         }
 
         private void OnDisable()
         {
             _controls.Player.Disable();
-            // 🛠 ИСПРАВЛЕНО: Отписываемся от метода
             _controls.Player.Cancel.performed -= OnCancelPressed;
-        }
-
-        // 🛠 ИСПРАВЛЕНО: Метод-обработчик для Esc
-        private void OnCancelPressed(InputAction.CallbackContext ctx)
-        {
-            Close();
         }
 
         private void Start()
         {
             if (chestPanel != null) chestPanel.SetActive(false);
+        }
+
+        private void OnCancelPressed(InputAction.CallbackContext ctx)
+        {
+            if (IsOpen) Close();
         }
 
         public void Open(Chest chest)
@@ -53,11 +56,13 @@ namespace Game.RPG
 
             _currentChest = chest;
             _currentChest.OnChestChanged += RefreshUI;
+            IsOpen = true;
 
             RefreshUI();
 
             if (chestPanel != null) chestPanel.SetActive(true);
-            if (inventoryPanel != null) inventoryPanel.SetActive(true); // Показываем инвентарь рядом
+            if (InventoryUI.Instance != null) InventoryUI.Instance.ForceOpen();
+            if (characterPanel != null) characterPanel.SetActive(false);
 
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -66,11 +71,15 @@ namespace Game.RPG
 
         public void Close()
         {
+            if (!IsOpen) return;
+
             if (_currentChest != null) _currentChest.OnChestChanged -= RefreshUI;
             _currentChest = null;
+            IsOpen = false;
 
             if (chestPanel != null) chestPanel.SetActive(false);
-            if (inventoryPanel != null) inventoryPanel.SetActive(false); // Закрываем инвентарь
+            if (InventoryUI.Instance != null) InventoryUI.Instance.ForceClose();
+            if (characterPanel != null) characterPanel.SetActive(true);
 
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
@@ -93,6 +102,16 @@ namespace Game.RPG
                     _spawnedSlots.Add(slotUI);
                 }
             }
+
+            if (InventoryUI.Instance != null) InventoryUI.Instance.UpdateUI();
+        }
+
+        // 🛠 НОВЫЙ МЕТОД: Проверка, находится ли курсор над панелью сундука
+        public bool IsPointerOverChest(Vector2 screenPos, Camera cam)
+        {
+            if (chestPanel == null || !chestPanel.activeSelf) return false;
+            RectTransform rect = chestPanel.GetComponent<RectTransform>();
+            return rect != null && RectTransformUtility.RectangleContainsScreenPoint(rect, screenPos, cam);
         }
     }
 }

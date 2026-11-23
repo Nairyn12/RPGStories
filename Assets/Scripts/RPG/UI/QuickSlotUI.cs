@@ -1,4 +1,4 @@
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -39,7 +39,7 @@ namespace Game.RPG
 
             if (slot != null && slot.Item != null)
             {
-                if (iconImage != null) // ������
+                if (iconImage != null) // Защита
                 {
                     iconImage.gameObject.SetActive(true);
                     iconImage.sprite = slot.Item.Icon;
@@ -72,6 +72,13 @@ namespace Game.RPG
             {
                 if (invSlotUI.Slot != null && invSlotUI.Slot.Item != null)
                 {
+                    // 🛠 НОВАЯ ПРОВЕРКА: Если предмет нельзя класть в хотбар - выходим
+                    if (!invSlotUI.Slot.Item.CanBeInHotbar)
+                    {
+                        Debug.LogWarning($"[Hotbar] Предмет {invSlotUI.Slot.Item.ItemName} нельзя положить в хотбар!");
+                        return;
+                    }
+
                     _inventory.SetQuickSlot(slotIndex, invSlotUI.Slot);
                 }
             }

@@ -106,9 +106,15 @@ namespace Game.RPG
             {
                 if (InventorySlotUI.CurrentlyHoveredSlot.Slot != null && InventorySlotUI.CurrentlyHoveredSlot.Slot.Item != null)
                 {
+                    // 🛠 НОВАЯ ПРОВЕРКА
+                    if (!InventorySlotUI.CurrentlyHoveredSlot.Slot.Item.CanBeInHotbar)
+                    {
+                        Debug.LogWarning("[Hotbar] Этот предмет нельзя назначить на быструю клавишу!");
+                        return;
+                    }
+
                     inventory.SetQuickSlot(index, InventorySlotUI.CurrentlyHoveredSlot.Slot);
-                    Debug.Log($"[Hotbar] Предмет назначен на кнопку {index + 1}");
-                    return; // Выходим, чтобы не использовать предмет
+                    return;
                 }
             }
 

@@ -23,6 +23,9 @@ namespace Game.RPG
         public ItemType Type;
         public int MaxStack = 1;
 
+        [Tooltip("Можно ли положить этот предмет в панель быстрого доступа (хотбар)?")]
+        public bool CanBeInHotbar = true; // <-- НОВОЕ ПОЛЕ
+
         [Header("Equipment")] // <-- ДОБАВИТЬ
         public EquipmentType EquipSlot = EquipmentType.None;
     }

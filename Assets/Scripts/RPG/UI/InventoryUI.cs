@@ -1,11 +1,13 @@
-using System.Collections.Generic;
+п»їusing System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem; // <-- ВАЖНО
+using UnityEngine.InputSystem;
 
 namespace Game.RPG
 {
     public class InventoryUI : MonoBehaviour
     {
+        public static InventoryUI Instance { get; private set; }
+
         [Header("References")]
         [SerializeField] private PlayerInventory inventory;
         [SerializeField] private GameObject inventoryPanel;
@@ -13,36 +15,38 @@ namespace Game.RPG
         [SerializeField] private GameObject slotPrefab;
 
         private List<InventorySlotUI> _spawnedSlots = new();
-        private bool _isOpen = false;
-        private PlayerControls _controls; // <-- ДОБАВИТЬ
-        private bool _isDirty;
+        public bool IsOpen { get; private set; } = false;
+
+        private PlayerControls _controls;
 
         private void Awake()
         {
-            _controls = new PlayerControls(); // <-- ДОБАВИТЬ
+            if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+            Instance = this;
+            _controls = new PlayerControls();
         }
 
         private void OnEnable()
         {
             _controls.Player.Enable();
-            _controls.Player.ToggleInventory.performed += OnToggleInventory; // <-- Подписываемся на новую кнопку
+            _controls.Player.ToggleInventory.performed += OnToggleInventory;
+            _controls.Player.Cancel.performed += OnCancelPressed;
         }
 
         private void OnDisable()
         {
             _controls.Player.Disable();
-            _controls.Player.ToggleInventory.performed -= OnToggleInventory; // <-- Отписываемся
+            _controls.Player.ToggleInventory.performed -= OnToggleInventory;
+            _controls.Player.Cancel.performed -= OnCancelPressed;
         }
 
         private void Start()
         {
             if (inventory == null) inventory = FindFirstObjectByType<PlayerInventory>();
+            if (inventory != null) inventory.OnInventoryChanged += MarkDirty;
 
-            if (inventory != null)
-                inventory.OnInventoryChanged += MarkDirty;
-
-            inventoryPanel.SetActive(false);
-            _isOpen = false;
+            if (inventoryPanel != null) inventoryPanel.SetActive(false);
+            IsOpen = false;
         }
 
         private void OnDestroy()
@@ -50,35 +54,49 @@ namespace Game.RPG
             if (inventory != null) inventory.OnInventoryChanged -= MarkDirty;
         }
 
-        // Вместо прямого вызова UpdateUI, мы просто ставим флаг
-        // Вместо прямого вызова UpdateUI, мы просто ставим флаг
-        private void MarkDirty()
-        {
-            if (_isOpen) _isDirty = true;
-        }
-
-        // Обработчик нажатия кнопки
         private void OnToggleInventory(InputAction.CallbackContext ctx)
         {
-            // Запрещаем открывать инвентарь во время диалога
             if (DialogueRunner.IsDialogueActive) return;
+
+            if (ChestUI.Instance != null && ChestUI.Instance.IsOpen)
+            {
+                ChestUI.Instance.Close();
+                return;
+            }
 
             ToggleInventory();
         }
 
+        private void OnCancelPressed(InputAction.CallbackContext ctx)
+        {
+            if (IsOpen) ToggleInventory();
+        }
+
         public void ToggleInventory()
         {
-            _isOpen = !_isOpen;
-            inventoryPanel.SetActive(_isOpen);
+            if (IsOpen) ForceClose();
+            else ForceOpen();
+        }
 
-            if (_isOpen)
-            {
-                UpdateUI();
-                Time.timeScale = 0f;
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
-            }
-            else
+        public void ForceOpen()
+        {
+            if (IsOpen) return;
+            IsOpen = true;
+            if (inventoryPanel != null) inventoryPanel.SetActive(true);
+            UpdateUI();
+
+            Time.timeScale = 0f;
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+
+        public void ForceClose()
+        {
+            if (!IsOpen) return;
+            IsOpen = false;
+            if (inventoryPanel != null) inventoryPanel.SetActive(false);
+
+            if (ChestUI.Instance == null || !ChestUI.Instance.IsOpen)
             {
                 Time.timeScale = 1f;
                 Cursor.lockState = CursorLockMode.Locked;
@@ -86,15 +104,14 @@ namespace Game.RPG
             }
         }
 
-        private void UpdateUI()
+        private void MarkDirty()
         {
-            if (inventory == null || gridParent == null || slotPrefab == null)
-            {
-                Debug.LogError("[InventoryUI] Не назначены ссылки в инспекторе! UI не может обновиться.");
-                return;
-            }
+            if (IsOpen) UpdateUI();
+        }
 
-            if (TooltipManager.Instance != null) TooltipManager.Instance.HideTooltip();
+        public void UpdateUI()
+        {
+            if (inventory == null || gridParent == null || slotPrefab == null) return;
 
             foreach (var slot in _spawnedSlots)
             {
@@ -121,27 +138,12 @@ namespace Game.RPG
             }
         }
 
-        public void ForceUpdateUI()
+        // рџ›  РќРћР’Р«Р™ РњР•РўРћР”: РџСЂРѕРІРµСЂРєР°, РЅР°С…РѕРґРёС‚СЃСЏ Р»Рё РєСѓСЂСЃРѕСЂ РЅР°Рґ РїР°РЅРµР»СЊСЋ РёРЅРІРµРЅС‚Р°СЂСЏ
+        public bool IsPointerOverInventory(Vector2 screenPos, Camera cam)
         {
-            inventory = FindFirstObjectByType<PlayerInventory>();
-            if (inventory != null)
-            {
-                // Отписываемся и подписываемся заново, чтобы не было дублей
-                inventory.OnInventoryChanged -= MarkDirty;
-                inventory.OnInventoryChanged += MarkDirty;
-            }
-            UpdateUI();
-            Debug.Log("[InventoryUI] Ссылки и UI обновлены.");
-        }
-
-        private void LateUpdate()
-        {
-            // Выполняем перестройку ровно один раз в конце кадра, если были изменения
-            if (_isDirty && _isOpen)
-            {
-                _isDirty = false;
-                UpdateUI();
-            }
+            if (inventoryPanel == null || !inventoryPanel.activeSelf) return false;
+            RectTransform rect = inventoryPanel.GetComponent<RectTransform>();
+            return rect != null && RectTransformUtility.RectangleContainsScreenPoint(rect, screenPos, cam);
         }
     }
 }
