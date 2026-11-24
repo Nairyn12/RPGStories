@@ -17,5 +17,10 @@ MonoBehaviour:
   Description: "\u041F\u0430\u0441\u043A\u0443\u0434\u043D\u0430\u044F, \u043A\u0430\u043A
     \u0438 \u0432\u0441\u044F \u0435\u0433\u043E \u0436\u0438\u0437\u043D\u044C"
   Icon: {fileID: 0}
+  BasePrice: 20
+  IsUnique: 0
+  WorldPrefab: {fileID: 0}
   Type: 3
   MaxStack: 1
+  CanBeInHotbar: 1
+  EquipSlot: 0

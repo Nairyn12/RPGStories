@@ -58,6 +58,14 @@ namespace Game.RPG
         {
             if (DialogueRunner.IsDialogueActive) return;
 
+            // 🛠 ФИКС: Если открыта торговля - закрываем её
+            if (TradeUI.Instance != null && TradeUI.Instance.IsOpen)
+            {
+                TradeUI.Instance.CloseTrade();
+                return;
+            }
+
+            // Если открыт сундук - закрываем его
             if (ChestUI.Instance != null && ChestUI.Instance.IsOpen)
             {
                 ChestUI.Instance.Close();

@@ -152,5 +152,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a16607d51dfcd01489a27d8215a911e6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.RPG.WorldItem
-  itemData: {fileID: 11400000, guid: 042371150ccda0d4ca288c2a62a55359, type: 2}
-  amount: 1
+  itemData: {fileID: 11400000, guid: 83f11ac02f64dbd4f9915c8d569e5880, type: 2}
+  amount: 100

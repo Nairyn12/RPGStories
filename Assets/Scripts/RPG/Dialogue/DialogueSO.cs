@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Game.RPG
 {
-    [CreateAssetMenu(fileName = "Dialogue_", menuName = "RPG/Dialogue")]
+    [CreateAssetMenu(fileName = "Dialogue_", menuName = "RPG/Dialogue/Dialogue")]
     public class DialogueSO : ScriptableObject
     {
         public string NpcName;

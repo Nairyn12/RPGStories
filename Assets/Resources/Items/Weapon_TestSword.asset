@@ -22,9 +22,12 @@ MonoBehaviour:
     \u043D\u0435 \u0442\u0430\u043A\u0430\u044F \u0440\u0436\u0430\u0432\u0430\u044F,
     \u043A\u0430\u043A \u044D\u0442\u043E\u0442 \u043C\u0435\u0447"
   Icon: {fileID: 21300000, guid: 5fd50594014b70e48bd6993443d46b32, type: 3}
+  BasePrice: 15
+  IsUnique: 0
   WorldPrefab: {fileID: 770767498452482678, guid: 4a5a66c1b017c3e4e9abc1a5fb6695d0, type: 3}
   Type: 0
   MaxStack: 1
+  CanBeInHotbar: 1
   EquipSlot: 1
   BaseDamage: 15
   AttackCooldown: 0.8

@@ -15,6 +15,10 @@ namespace Game.RPG
         [TextArea] public string Description;
         public Sprite Icon;
 
+        [Header("Trade Settings")]
+        public int BasePrice = 10;
+        public bool IsUnique = false; // Уникальные предметы (требуют Persuasion)
+
         [Header("World Representation")] // <-- НОВОЕ
         [Tooltip("Префаб, который спавнится, если выбросить предмет на землю")]
         public GameObject WorldPrefab;
@@ -27,6 +31,6 @@ namespace Game.RPG
         public bool CanBeInHotbar = true; // <-- НОВОЕ ПОЛЕ
 
         [Header("Equipment")] // <-- ДОБАВИТЬ
-        public EquipmentType EquipSlot = EquipmentType.None;
+        public EquipmentType EquipSlot = EquipmentType.None;        
     }
 }

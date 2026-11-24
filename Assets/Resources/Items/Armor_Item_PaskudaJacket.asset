@@ -19,9 +19,12 @@ MonoBehaviour:
     \u0438 \u0443\u0431\u0438\u043B\u0438... \u041C\u043E\u0436\u0435\u0442 \u0431\u044B\u0442\u044C,
     \u043D\u0435 \u0441\u0442\u043E\u0438\u0442 \u0435\u0435 \u043D\u0430\u0434\u0435\u0432\u0430\u0442\u044C?"
   Icon: {fileID: 21300000, guid: 2f1eaeeaad36ee5469eff7ff158f37ba, type: 3}
+  BasePrice: 20
+  IsUnique: 0
   WorldPrefab: {fileID: 3813930378546605104, guid: 02c9efa87dee3fc4a8f9c15fb31d09fd, type: 3}
   Type: 1
   MaxStack: 1
+  CanBeInHotbar: 1
   EquipSlot: 2
   Modifiers:
   - Stat: 102
