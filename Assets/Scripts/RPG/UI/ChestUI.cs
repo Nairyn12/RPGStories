@@ -77,7 +77,12 @@ namespace Game.RPG
             _currentChest = null;
             IsOpen = false;
 
+            // 🛠 Прячем тултип
+            if (TooltipManager.Instance != null) TooltipManager.Instance.HideTooltip();
+            InventorySlotUI.CurrentlyHoveredSlot = null;
+
             if (chestPanel != null) chestPanel.SetActive(false);
+
             if (InventoryUI.Instance != null) InventoryUI.Instance.ForceClose();
             if (characterPanel != null) characterPanel.SetActive(true);
 

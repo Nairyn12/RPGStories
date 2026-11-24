@@ -94,6 +94,13 @@ namespace Game.RPG
         {
             if (!IsOpen) return;
             IsOpen = false;
+
+            // 🛠 Прячем тултип при закрытии инвентаря
+            if (TooltipManager.Instance != null) TooltipManager.Instance.HideTooltip();
+
+            // 🛠 Сбрасываем "зависшую" ссылку на наведенный слот
+            InventorySlotUI.CurrentlyHoveredSlot = null;
+
             if (inventoryPanel != null) inventoryPanel.SetActive(false);
 
             if (ChestUI.Instance == null || !ChestUI.Instance.IsOpen)

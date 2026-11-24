@@ -101,12 +101,13 @@ namespace Game.RPG
 
         private void UseHotbar(int index)
         {
-            // 1. Если мышка наведена на слот в инвентаре - назначаем предмет в хотбар
-            if (InventorySlotUI.CurrentlyHoveredSlot != null)
+            // 1. Если инвентарь ОТКРЫТ - мы назначаем предмет в хотбар
+            if (InventoryUI.Instance != null && InventoryUI.Instance.IsOpen)
             {
-                if (InventorySlotUI.CurrentlyHoveredSlot.Slot != null && InventorySlotUI.CurrentlyHoveredSlot.Slot.Item != null)
+                if (InventorySlotUI.CurrentlyHoveredSlot != null &&
+                    InventorySlotUI.CurrentlyHoveredSlot.Slot != null &&
+                    InventorySlotUI.CurrentlyHoveredSlot.Slot.Item != null)
                 {
-                    // 🛠 НОВАЯ ПРОВЕРКА
                     if (!InventorySlotUI.CurrentlyHoveredSlot.Slot.Item.CanBeInHotbar)
                     {
                         Debug.LogWarning("[Hotbar] Этот предмет нельзя назначить на быструю клавишу!");
@@ -114,11 +115,12 @@ namespace Game.RPG
                     }
 
                     inventory.SetQuickSlot(index, InventorySlotUI.CurrentlyHoveredSlot.Slot);
-                    return;
+                    Debug.Log($"[Hotbar] Предмет назначен на кнопку {index + 1}");
                 }
+                return; // Выходим, чтобы не использовать предмет, пока открыто меню
             }
 
-            // 2. Если инвентарь закрыт - используем предмет из хотбара
+            // 2. Если инвентарь ЗАКРЫТ - мы ИСПОЛЬЗУЕМ предмет
             if (Time.timeScale > 0f)
             {
                 inventory.UseQuickSlot(index);

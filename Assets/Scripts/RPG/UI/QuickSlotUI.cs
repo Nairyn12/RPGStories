@@ -14,16 +14,15 @@ namespace Game.RPG
 
         private PlayerInventory _inventory;
 
-        private void Start()
-        {
-            if (amountText != null) amountText.text = (slotIndex + 1).ToString();
-            UpdateUI();
-        }
-
         private void OnEnable()
         {
             _inventory = FindFirstObjectByType<PlayerInventory>();
             if (_inventory != null) _inventory.OnInventoryChanged += UpdateUI;
+
+            if (amountText != null) amountText.text = (slotIndex + 1).ToString();
+
+            // 🛠 ФИКС: Обновляем хотбар при включении
+            UpdateUI();
         }
 
         private void OnDisable()
@@ -39,7 +38,7 @@ namespace Game.RPG
 
             if (slot != null && slot.Item != null)
             {
-                if (iconImage != null) // Защита
+                if (iconImage != null)
                 {
                     iconImage.gameObject.SetActive(true);
                     iconImage.sprite = slot.Item.Icon;
@@ -72,7 +71,6 @@ namespace Game.RPG
             {
                 if (invSlotUI.Slot != null && invSlotUI.Slot.Item != null)
                 {
-                    // 🛠 НОВАЯ ПРОВЕРКА: Если предмет нельзя класть в хотбар - выходим
                     if (!invSlotUI.Slot.Item.CanBeInHotbar)
                     {
                         Debug.LogWarning($"[Hotbar] Предмет {invSlotUI.Slot.Item.ItemName} нельзя положить в хотбар!");

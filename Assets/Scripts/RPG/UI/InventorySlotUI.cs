@@ -14,7 +14,7 @@ namespace Game.RPG
         [SerializeField] private TextMeshProUGUI hotbarText;
 
         public PlayerInventory.InventorySlot Slot { get; private set; }
-        public static InventorySlotUI CurrentlyHoveredSlot { get; private set; }
+        public static InventorySlotUI CurrentlyHoveredSlot { get; set; }
 
         private PlayerInventory _inventory;
         private GameObject _dragIcon;

@@ -12,15 +12,13 @@ namespace Game.RPG
 
         private PlayerInventory _inventory;
 
-        private void Start()
-        {
-            UpdateUI();
-        }
-
         private void OnEnable()
         {
             _inventory = FindFirstObjectByType<PlayerInventory>();
             if (_inventory != null) _inventory.OnEquipmentChanged += UpdateUI;
+
+            // 🛠 ФИКС: Принудительно обновляем иконку, когда панель включается
+            UpdateUI();
         }
 
         private void OnDisable()
