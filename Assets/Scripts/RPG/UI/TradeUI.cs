@@ -10,33 +10,47 @@ namespace Game.RPG
     public class TradeUI : MonoBehaviour
     {
         public static TradeUI Instance { get; private set; }
-        public bool IsOpen { get; private set; } = false; // 🛠 ДОБАВЛЕНО
+        public bool IsOpen { get; private set; } = false;
 
-        [Header("Main Panel")]
+        [Header("Main Panels")]
         [SerializeField] private GameObject tradePanel;
         [SerializeField] private GameObject characterPanel;
+        [SerializeField] private GameObject playerHUD;      // 🛠 НОВОЕ
+        [SerializeField] private GameObject hotbarPanel;    // 🛠 НОВОЕ
 
-        [Header("Player Side")]
-        [SerializeField] private Transform playerGrid;
-        [SerializeField] private GameObject tradeSlotPrefab;
+        [Header("Player UI")]
+        [SerializeField] private Transform playerInvGrid;
+        [SerializeField] private Transform playerOfferGrid;
+        [SerializeField] private Slider playerGoldSlider;
+        [SerializeField] private TextMeshProUGUI playerGoldText;
 
-        [Header("Merchant Side")]
-        [SerializeField] private Transform merchantGrid;
+        [Header("Merchant UI")]
+        [SerializeField] private Transform merchantInvGrid;
+        [SerializeField] private Transform merchantOfferGrid;
+        [SerializeField] private Slider merchantGoldSlider;
         [SerializeField] private TextMeshProUGUI merchantGoldText;
 
-        [Header("Confirmation Popup")]
-        [SerializeField] private GameObject confirmPanel;
-        [SerializeField] private TextMeshProUGUI confirmText;
-        [SerializeField] private Button confirmYesButton;
-        [SerializeField] private Button confirmNoButton;
+        [Header("Deal UI")]
+        [SerializeField] private TextMeshProUGUI statusText;
+        [SerializeField] private Button confirmButton;
+        [SerializeField] private Button balanceButton;
+        [SerializeField] private Button closeButton;
+        [SerializeField] private GameObject tradeSlotPrefab;
 
         private MerchantInventory _merchant;
         private PlayerInventory _playerInventory;
         private PlayerStats _stats;
         private ReputationManager _rep;
 
-        private List<GameObject> _playerSlots = new();
-        private List<GameObject> _merchantSlots = new();
+        private List<PlayerInventory.InventorySlot> _playerOffer = new();
+        private List<PlayerInventory.InventorySlot> _merchantOffer = new();
+
+        private int _playerGoldAmount;
+        private int _merchantGoldAmount;
+        private int _playerTotalGold;
+        private int _merchantTotalGold;
+
+        private List<GameObject> _spawnedSlots = new();
         private PlayerControls _controls;
 
         private void Awake()
@@ -70,38 +84,65 @@ namespace Game.RPG
             _stats = FindFirstObjectByType<PlayerStats>();
             _rep = FindFirstObjectByType<ReputationManager>();
 
-            if (!TradeManager.CanTrade(_rep, _merchant.Faction))
-            {
-                Debug.LogWarning("[Trade] Торговец отказывается с вами торговать (плохая репутация)!");
-                return;
-            }
+            if (!TradeManager.CanTrade(_rep, _merchant.Faction)) return;
 
-            IsOpen = true; // 🛠 УСТАНАВЛИВАЕМ ФЛАГ
-
-            // Закрываем инвентарь через его логику
-            if (InventoryUI.Instance != null) InventoryUI.Instance.ForceClose();
-
+            IsOpen = true;
             tradePanel.SetActive(true);
             if (characterPanel != null) characterPanel.SetActive(false);
-            if (confirmPanel != null) confirmPanel.SetActive(false);
+            if (playerHUD != null) playerHUD.SetActive(false);       // 🛠 Скрываем HUD
+            if (hotbarPanel != null) hotbarPanel.SetActive(false);   // 🛠 Скрываем Хотбар
+
 
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
             Time.timeScale = 0f;
 
-            _merchant.OnMerchantChanged += RefreshUI;
+            _playerOffer.Clear();
+            _merchantOffer.Clear();
+            _playerGoldAmount = 0;
+            _merchantGoldAmount = 0;
+
+            SetupSliders();
+
+            balanceButton.onClick.RemoveAllListeners();
+            balanceButton.onClick.AddListener(BalanceDeal);
+
+            confirmButton.onClick.RemoveAllListeners();
+            confirmButton.onClick.AddListener(ConfirmTrade);
+
+            closeButton.onClick.RemoveAllListeners();
+            closeButton.onClick.AddListener(CloseTrade);
+
             RefreshUI();
+        }
+
+        private void SetupSliders()
+        {
+            _playerTotalGold = _playerInventory.Slots.Where(s => s.Item != null && s.Item.ItemId == "gold").Sum(s => s.Amount);
+            _merchantTotalGold = _merchant.Gold;
+
+            playerGoldSlider.minValue = 0;
+            playerGoldSlider.maxValue = Mathf.Max(1, _playerTotalGold);
+            playerGoldSlider.value = 0;
+            playerGoldSlider.onValueChanged.RemoveAllListeners();
+            playerGoldSlider.onValueChanged.AddListener((val) => { _playerGoldAmount = (int)val; UpdateDealStatus(); });
+
+            merchantGoldSlider.minValue = 0;
+            merchantGoldSlider.maxValue = Mathf.Max(1, _merchantTotalGold);
+            merchantGoldSlider.value = 0;
+            merchantGoldSlider.onValueChanged.RemoveAllListeners();
+            merchantGoldSlider.onValueChanged.AddListener((val) => { _merchantGoldAmount = (int)val; UpdateDealStatus(); });
         }
 
         public void CloseTrade()
         {
             if (!IsOpen) return;
-            IsOpen = false; // 🛠 СБРАСЫВАЕМ ФЛАГ
-
-            if (_merchant != null) _merchant.OnMerchantChanged -= RefreshUI;
+            IsOpen = false;
 
             tradePanel.SetActive(false);
             if (characterPanel != null) characterPanel.SetActive(true);
+            if (playerHUD != null) playerHUD.SetActive(true);        // 🛠 Возвращаем HUD
+            if (hotbarPanel != null) hotbarPanel.SetActive(true);    // 🛠 Возвращаем Хотбар
 
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
@@ -110,96 +151,177 @@ namespace Game.RPG
 
         private void RefreshUI()
         {
-            foreach (var s in _playerSlots) Destroy(s);
-            _playerSlots.Clear();
-            foreach (var s in _merchantSlots) Destroy(s);
-            _merchantSlots.Clear();
+            if (TooltipManager.Instance != null) TooltipManager.Instance.HideTooltip();
 
-            if (merchantGoldText != null) merchantGoldText.text = $"Золото: {_merchant.Gold}";
+            foreach (var s in _spawnedSlots) Destroy(s);
+            _spawnedSlots.Clear();
 
+            // 1. Инвентарь игрока
             foreach (var slot in _playerInventory.Slots)
             {
-                if (slot.EquippedSlot != EquipmentType.None) continue;
-                if (slot.Item.ItemId == "gold") continue;
+                if (slot.EquippedSlot != EquipmentType.None || slot.Item.ItemId == "gold" || _playerOffer.Contains(slot)) continue;
 
                 int price = TradeManager.CalculateSellPrice(slot.Item, _stats, _rep, _merchant.Faction);
-                var obj = Instantiate(tradeSlotPrefab, playerGrid);
-                obj.GetComponent<TradeSlotUI>().Setup(slot, false, price, this);
-                _playerSlots.Add(obj);
+                CreateSlot(playerInvGrid, slot, price, () => { _playerOffer.Add(slot); RefreshUI(); });
             }
 
+            // 2. Инвентарь торговца
             foreach (var slot in _merchant.Items)
             {
-                if (slot.Item.IsUnique && _stats.GetStat(StatType.Persuasion) < _merchant.RequiredPersuasionForUnique)
+                if (slot.Amount <= 0) continue; // 🛠 Защита от пустых слотов
+                if (slot.Item.IsUnique && _stats.GetStat(StatType.Persuasion) < _merchant.RequiredPersuasionForUnique || _merchantOffer.Contains(slot))
                     continue;
 
                 int price = TradeManager.CalculateBuyPrice(slot.Item, _stats, _rep, _merchant.Faction);
-                var obj = Instantiate(tradeSlotPrefab, merchantGrid);
-                obj.GetComponent<TradeSlotUI>().Setup(slot, true, price, this);
-                _merchantSlots.Add(obj);
+                CreateSlot(merchantInvGrid, slot, price, () => { _merchantOffer.Add(slot); RefreshUI(); });
             }
+
+            // 3. Зона сделки: предметы игрока
+            foreach (var slot in _playerOffer)
+            {
+                int price = TradeManager.CalculateSellPrice(slot.Item, _stats, _rep, _merchant.Faction);
+                CreateSlot(playerOfferGrid, slot, price, () => { _playerOffer.Remove(slot); RefreshUI(); }, "X");
+            }
+
+            // 4. Зона сделки: предметы торговца
+            foreach (var slot in _merchantOffer)
+            {
+                int price = TradeManager.CalculateBuyPrice(slot.Item, _stats, _rep, _merchant.Faction);
+                CreateSlot(merchantOfferGrid, slot, price, () => { _merchantOffer.Remove(slot); RefreshUI(); }, "X");
+            }
+
+            UpdateDealStatus();
         }
 
-        public void TryBuy(PlayerInventory.InventorySlot slot)
+        private void CreateSlot(Transform parent, PlayerInventory.InventorySlot slot, int price, System.Action onClick, string overrideText = "")
         {
-            int price = TradeManager.CalculateBuyPrice(slot.Item, _stats, _rep, _merchant.Faction);
+            var obj = Instantiate(tradeSlotPrefab, parent);
+            obj.GetComponent<TradeSlotUI>().Setup(slot, price, onClick, overrideText);
+            _spawnedSlots.Add(obj);
+        }
 
-            var goldSlot = _playerInventory.Slots.FirstOrDefault(s => s.Item != null && s.Item.ItemId == "gold");
-            int playerGold = goldSlot != null ? goldSlot.Amount : 0;
+        private void UpdateDealStatus()
+        {
+            int playerItemsValue = _playerOffer.Sum(s => TradeManager.CalculateSellPrice(s.Item, _stats, _rep, _merchant.Faction) * s.Amount);
+            int merchantItemsValue = _merchantOffer.Sum(s => TradeManager.CalculateBuyPrice(s.Item, _stats, _rep, _merchant.Faction) * s.Amount);
 
-            if (playerGold < price)
+            int difference = merchantItemsValue - playerItemsValue;
+            int finalBalance = difference - _playerGoldAmount + _merchantGoldAmount;
+
+            playerGoldText.text = $"Вы даете: {_playerGoldAmount} g";
+            merchantGoldText.text = $"Торговец дает: {_merchantGoldAmount} g";
+
+            if (_playerOffer.Count == 0 && _merchantOffer.Count == 0 && _playerGoldAmount == 0 && _merchantGoldAmount == 0)
             {
-                Debug.LogError("[Trade] Недостаточно золота!");
+                statusText.text = "Выберите предметы для сделки.";
+                statusText.color = Color.white;
+                confirmButton.interactable = false;
                 return;
             }
 
-            ShowConfirmation($"Купить {slot.Item.ItemName} за {price} золота?", () => {
-                _playerInventory.RemoveItem(goldSlot, price);
-                _merchant.AddGold(price);
-                _merchant.RemoveItem(slot, 1);
-                _playerInventory.AddItem(slot.Item, 1);
-                RefreshUI();
-            });
+            if (finalBalance > 0)
+            {
+                statusText.text = $"Вы должны доплатить {finalBalance} g";
+                statusText.color = Color.yellow;
+                confirmButton.interactable = false;
+            }
+            else if (finalBalance < 0)
+            {
+                statusText.text = $"Торговец должен вам {Mathf.Abs(finalBalance)} g";
+                statusText.color = Color.yellow;
+                confirmButton.interactable = false;
+            }
+            else
+            {
+                statusText.text = "Сделка сбалансирована!";
+                statusText.color = Color.green;
+                confirmButton.interactable = true;
+            }
         }
 
-        public void TrySell(PlayerInventory.InventorySlot slot)
+        private void BalanceDeal()
         {
-            int price = TradeManager.CalculateSellPrice(slot.Item, _stats, _rep, _merchant.Faction);
+            int playerItemsValue = _playerOffer.Sum(s => TradeManager.CalculateSellPrice(s.Item, _stats, _rep, _merchant.Faction) * s.Amount);
+            int merchantItemsValue = _merchantOffer.Sum(s => TradeManager.CalculateBuyPrice(s.Item, _stats, _rep, _merchant.Faction) * s.Amount);
 
-            if (_merchant.Gold < price)
+            int difference = merchantItemsValue - playerItemsValue;
+
+            playerGoldSlider.value = 0;
+            merchantGoldSlider.value = 0;
+
+            if (difference > 0)
             {
-                Debug.LogError("[Trade] У торговца недостаточно золота!");
-                return;
+                if (_playerTotalGold >= difference) playerGoldSlider.value = difference;
+                else
+                {
+                    statusText.text = $"Недостаточно золота! Нужно {difference} g, у вас {_playerTotalGold} g.";
+                    statusText.color = Color.red;
+                }
+            }
+            else if (difference < 0)
+            {
+                int amount = Mathf.Abs(difference);
+                if (_merchantTotalGold >= amount) merchantGoldSlider.value = amount;
+                else
+                {
+                    statusText.text = $"У торговца недостаточно золота! Нужно {amount} g, у него {_merchantTotalGold} g.";
+                    statusText.color = Color.red;
+                }
+            }
+        }
+
+        private void ConfirmTrade()
+        {
+            if (_playerGoldAmount > _playerTotalGold || _merchantGoldAmount > _merchantTotalGold) return;
+
+            var pOffer = new List<PlayerInventory.InventorySlot>(_playerOffer);
+            var mOffer = new List<PlayerInventory.InventorySlot>(_merchantOffer);
+
+            _playerOffer.Clear();
+            _merchantOffer.Clear();
+
+            // 🛠 ФИКС: Сохраняем количество в переменную ДО удаления, иначе оно станет 0!
+            foreach (var slot in pOffer)
+            {
+                int amount = slot.Amount;
+                _playerInventory.RemoveItem(slot, amount);
+                _merchant.AddItem(slot.Item, amount);
             }
 
-            ShowConfirmation($"Продать {slot.Item.ItemName} за {price} золота?", () => {
-                _merchant.RemoveGold(price);
+            foreach (var slot in mOffer)
+            {
+                int amount = slot.Amount;
+                _merchant.RemoveItem(slot, amount);
+                _playerInventory.AddItem(slot.Item, amount);
+            }
+
+            // Переводим золото
+            if (_playerGoldAmount > 0)
+            {
+                int amountToRemove = _playerGoldAmount;
+                foreach (var goldSlot in _playerInventory.Slots.Where(s => s.Item.ItemId == "gold").ToList())
+                {
+                    if (amountToRemove <= 0) break;
+                    int take = Mathf.Min(goldSlot.Amount, amountToRemove);
+                    _playerInventory.RemoveItem(goldSlot, take);
+                    amountToRemove -= take;
+                }
+                _merchant.AddGold(_playerGoldAmount);
+            }
+
+            if (_merchantGoldAmount > 0)
+            {
+                _merchant.RemoveGold(_merchantGoldAmount);
                 var goldItem = Resources.LoadAll<ItemDataSO>("Items").FirstOrDefault(i => i.ItemId == "gold");
-                if (goldItem != null) _playerInventory.AddItem(goldItem, price);
-                _playerInventory.RemoveItem(slot, 1);
-                _merchant.AddItem(slot.Item, 1);
-                RefreshUI();
-            });
-        }
+                if (goldItem != null) _playerInventory.AddItem(goldItem, _merchantGoldAmount);
+            }
 
-        private System.Action _onConfirmAction;
+            _playerGoldAmount = 0;
+            _merchantGoldAmount = 0;
 
-        private void ShowConfirmation(string text, System.Action onConfirm)
-        {
-            _onConfirmAction = onConfirm;
-            confirmPanel.SetActive(true);
-            confirmText.text = text;
-
-            confirmYesButton.onClick.RemoveAllListeners();
-            confirmYesButton.onClick.AddListener(() => {
-                _onConfirmAction?.Invoke();
-                confirmPanel.SetActive(false);
-            });
-
-            confirmNoButton.onClick.RemoveAllListeners();
-            confirmNoButton.onClick.AddListener(() => {
-                confirmPanel.SetActive(false);
-            });
+            SetupSliders();
+            RefreshUI();
+            Debug.Log("[Trade] Сделка совершена!");
         }
     }
 }

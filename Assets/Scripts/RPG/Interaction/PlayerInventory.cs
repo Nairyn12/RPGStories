@@ -55,7 +55,7 @@ namespace Game.RPG
             {
                 foreach (var slot in _slots)
                 {
-                    if (slot.Item == item && slot.Amount < item.MaxStack)
+                    if (slot.Item != null && slot.Item.ItemId == item.ItemId && slot.Amount < item.MaxStack)
                     {
                         slot.Amount += amount;
                         added = true;
@@ -69,7 +69,6 @@ namespace Game.RPG
                 _slots.Add(new InventorySlot { Item = item, Amount = amount });
             }
 
-            // 🛠 УВЕДОМЛЯЕМ КВЕСТЫ О СБОРЕ ПРЕДМЕТА
             if (QuestManager.Instance != null)
             {
                 QuestManager.Instance.ReportCollect(item.ItemId, amount);

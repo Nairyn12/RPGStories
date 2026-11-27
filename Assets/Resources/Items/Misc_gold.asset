@@ -25,6 +25,6 @@ MonoBehaviour:
   IsUnique: 0
   WorldPrefab: {fileID: 4020926270912362044, guid: f18849787db1e3540964780c859f0eb2, type: 3}
   Type: 4
-  MaxStack: 10000
+  MaxStack: 100000
   CanBeInHotbar: 0
   EquipSlot: 0

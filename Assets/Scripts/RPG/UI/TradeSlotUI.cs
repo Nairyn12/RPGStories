@@ -1,7 +1,8 @@
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using System;
 
 namespace Game.RPG
 {
@@ -11,40 +12,55 @@ namespace Game.RPG
         [SerializeField] private TextMeshProUGUI amountText;
         [SerializeField] private TextMeshProUGUI priceText;
 
-        public PlayerInventory.InventorySlot Slot { get; private set; }
-        public bool IsMerchantSlot { get; private set; }
-        private TradeUI _tradeUI;
+        private PlayerInventory.InventorySlot _slot;
+        private Action _onClick;
+        private string _priceOverride;
 
-        public void Setup(PlayerInventory.InventorySlot slot, bool isMerchant, int price, TradeUI tradeUI)
+        public void Setup(PlayerInventory.InventorySlot slot, int price, Action onClick, string priceOverride = "")
         {
-            Slot = slot;
-            IsMerchantSlot = isMerchant;
-            _tradeUI = tradeUI;
+            _slot = slot;
+            _onClick = onClick;
+            _priceOverride = priceOverride;
 
-            if (Slot == null || Slot.Item == null) return;
+            if (_slot == null || _slot.Item == null)
+            {
+                if (iconImage != null) iconImage.gameObject.SetActive(false);
+                if (amountText != null) amountText.text = "";
+                if (priceText != null) priceText.text = "";
+                return;
+            }
 
-            iconImage.gameObject.SetActive(true);
-            iconImage.sprite = Slot.Item.Icon;
-            iconImage.raycastTarget = false;
+            if (iconImage != null)
+            {
+                iconImage.gameObject.SetActive(true);
+                iconImage.sprite = _slot.Item.Icon;
+                iconImage.raycastTarget = false;
+                iconImage.preserveAspect = true; // 🛠 Чтобы иконка не растягивалась
+            }
 
-            amountText.text = Slot.Amount > 1 ? Slot.Amount.ToString() : "";
-            priceText.text = $"{price} g";
+            if (amountText != null)
+                amountText.text = _slot.Amount > 1 ? _slot.Amount.ToString() : "";
+
+            if (priceText != null)
+            {
+                if (string.IsNullOrEmpty(_priceOverride))
+                    priceText.text = $"{price} g";
+                else
+                    priceText.text = _priceOverride;
+            }
         }
 
         public void OnPointerClick(PointerEventData eventData)
         {
-            if (Slot == null || Slot.Item == null) return;
-
-            if (IsMerchantSlot)
-                _tradeUI.TryBuy(Slot);
-            else
-                _tradeUI.TrySell(Slot);
+            // 🛠 ФИКС: Скрываем тултип при клике, чтобы он не залипал
+            if (TooltipManager.Instance != null) TooltipManager.Instance.HideTooltip();
+            _onClick?.Invoke();
         }
 
         public void OnPointerEnter(PointerEventData eventData)
         {
-            if (Slot != null && Slot.Item != null && TooltipManager.Instance != null)
-                TooltipManager.Instance.ShowTooltip(Slot.Item, transform.position);
+            if (_slot != null && _slot.Item != null && TooltipManager.Instance != null)
+                TooltipManager.Instance.ShowTooltip(_slot.Item, transform.position);
         }
 
         public void OnPointerExit(PointerEventData eventData)
