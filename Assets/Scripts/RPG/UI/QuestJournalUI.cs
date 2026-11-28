@@ -1,4 +1,4 @@
-using UnityEngine;
+п»їusing UnityEngine;
 using UnityEngine.InputSystem;
 using TMPro;
 using System.Collections.Generic;
@@ -43,7 +43,8 @@ namespace Game.RPG
 
         private void OnToggleJournal(InputAction.CallbackContext ctx)
         {
-            if (DialogueRunner.IsDialogueActive) return; // Не открываем во время диалога
+            if (DialogueRunner.IsDialogueActive) return; // РќРµ РѕС‚РєСЂС‹РІР°РµРј РІРѕ РІСЂРµРјСЏ РґРёР°Р»РѕРіР°
+            if (LockpickingManager.Instance != null && LockpickingManager.Instance.IsActive) return; // рџ›  РќРћР’РђРЇ РЎРўР РћРљРђ
 
             _isOpen = !_isOpen;
             journalPanel.SetActive(_isOpen);
@@ -95,7 +96,7 @@ namespace Game.RPG
             {
                 var obj = activeQuest.Quest.Objectives[i];
                 int current = activeQuest.Progress[i];
-                string objName = obj.TargetId; // В идеале тут должно быть читаемое имя
+                string objName = obj.TargetId; // Р’ РёРґРµР°Р»Рµ С‚СѓС‚ РґРѕР»Р¶РЅРѕ Р±С‹С‚СЊ С‡РёС‚Р°РµРјРѕРµ РёРјСЏ
 
                 string color = (current >= obj.RequiredAmount) ? "green" : "white";
                 objectivesText.text += $"- <color={color}>{objName}: {current}/{obj.RequiredAmount}</color>\n";
@@ -104,7 +105,7 @@ namespace Game.RPG
 
         private void ClearDetails()
         {
-            titleText.text = "Выберите квест";
+            titleText.text = "Р’С‹Р±РµСЂРёС‚Рµ РєРІРµСЃС‚";
             descText.text = "";
             objectivesText.text = "";
         }

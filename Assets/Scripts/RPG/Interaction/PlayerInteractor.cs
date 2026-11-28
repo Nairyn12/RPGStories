@@ -33,10 +33,10 @@ namespace Game.RPG
         {
             if (cameraTransform == null) return;
 
-            // 🛠 ФИКС: Прячем луч, если открыт любой UI
             if ((TradeUI.Instance != null && TradeUI.Instance.IsOpen) ||
                 (InventoryUI.Instance != null && InventoryUI.Instance.IsOpen) ||
                 (ChestUI.Instance != null && ChestUI.Instance.IsOpen) ||
+                (LockpickingManager.Instance != null && LockpickingManager.Instance.IsActive) ||
                 DialogueRunner.IsDialogueActive)
             {
                 ClearCurrentInteractable();
@@ -46,38 +46,60 @@ namespace Game.RPG
             Ray ray = new Ray(cameraTransform.position, cameraTransform.forward);
             bool hitSomething = Physics.Raycast(ray, out RaycastHit hit, interactDistance, interactLayer);
 
-            if (hitSomething && hit.collider.TryGetComponent(out IInteractable interactable))
+            if (hitSomething)
             {
-                if (interactable is UnityEngine.Object obj && obj == null)
+                // 🛠 Используем GetComponentInParent, чтобы находить скрипты на корневых объектах
+                var lockedObj = hit.collider.GetComponentInParent<LockedObject>();
+                if (lockedObj != null)
                 {
-                    ClearCurrentInteractable();
+                    HandleInteractable(lockedObj);
                     return;
                 }
 
-                if (_currentInteractable != interactable)
+                var interactable = hit.collider.GetComponentInParent<IInteractable>();
+                if (interactable != null)
                 {
-                    _currentInteractable = interactable;
-                    OnInteractPromptChanged?.Invoke(interactable.GetInteractionText());
+                    HandleInteractable(interactable);
+                    return;
                 }
-                return;
             }
 
             ClearCurrentInteractable();
         }
 
+        private void HandleInteractable(IInteractable interactable)
+        {
+            if (interactable is UnityEngine.Object obj && obj == null)
+            {
+                ClearCurrentInteractable();
+                return;
+            }
+
+            if (_currentInteractable != interactable)
+            {
+                _currentInteractable = interactable;
+                OnInteractPromptChanged?.Invoke(interactable.GetInteractionText());
+            }
+        }
+
         private void OnInteractPressed(InputAction.CallbackContext ctx)
         {
-            // 🛠 ФИКС: Не взаимодействуем, если открыт UI
             if ((TradeUI.Instance != null && TradeUI.Instance.IsOpen) ||
                 (InventoryUI.Instance != null && InventoryUI.Instance.IsOpen) ||
                 (ChestUI.Instance != null && ChestUI.Instance.IsOpen) ||
+                (LockpickingManager.Instance != null && LockpickingManager.Instance.IsActive) ||
                 DialogueRunner.IsDialogueActive)
                 return;
 
             if (_currentInteractable != null)
             {
+                Debug.Log($"[Interactor] Нажата E, вызов Interact() для {(_currentInteractable as MonoBehaviour).gameObject.name}");
                 _currentInteractable.Interact(gameObject);
                 ClearCurrentInteractable();
+            }
+            else
+            {
+                Debug.Log("[Interactor] Нажата E, но цель не найдена (луч не видит объект).");
             }
         }
 

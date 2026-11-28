@@ -1,4 +1,4 @@
-using System;
+п»їusing System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -31,11 +31,18 @@ namespace Game.RPG
             }
         }
 
-        public string GetInteractionText() => "Открыть сундук";
+        public string GetInteractionText() => "РћС‚РєСЂС‹С‚СЊ СЃСѓРЅРґСѓРє";
 
         public void Interact(GameObject interactor)
         {
-            // При взаимодействии открываем UI сундука
+            // рџ›  РџСЂРѕРІРµСЂРєР°: РµСЃР»Рё РЅР° РѕР±СЉРµРєС‚Рµ РµСЃС‚СЊ LockedObject Рё РѕРЅ Р·Р°РїРµСЂС‚ - РЅРµ РѕС‚РєСЂС‹РІР°РµРј
+            var lockedObj = GetComponent<LockedObject>();
+            if (lockedObj != null && lockedObj.IsLocked())
+            {
+                Debug.Log("[Chest] РЎСѓРЅРґСѓРє Р·Р°РїРµСЂС‚! РЎРЅР°С‡Р°Р»Р° РІР·Р»РѕРјР°Р№С‚Рµ Р·Р°РјРѕРє.");
+                return;
+            }
+
             var chestUI = FindFirstObjectByType<ChestUI>();
             if (chestUI != null)
             {
@@ -43,12 +50,10 @@ namespace Game.RPG
             }
         }
 
-        // ==== МЕТОДЫ ДЛЯ UI ====
         public void AddItem(ItemDataSO item, int amount)
         {
             if (item == null || amount <= 0) return;
 
-            // Пытаемся стакнуть
             if (item.MaxStack > 1)
             {
                 foreach (var slot in _slots)
@@ -77,7 +82,7 @@ namespace Game.RPG
             return true;
         }
 
-        // ==== СОХРАНЕНИЕ ====
+        // ==== РЎРћРҐР РђРќР•РќРР• ====
         public string SaveKey => $"Chest_{gameObject.name}_{transform.position.x}_{transform.position.z}";
 
         [Serializable]

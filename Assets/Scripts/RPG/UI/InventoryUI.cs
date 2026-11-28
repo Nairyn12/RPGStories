@@ -57,6 +57,8 @@ namespace Game.RPG
         private void OnToggleInventory(InputAction.CallbackContext ctx)
         {
             if (DialogueRunner.IsDialogueActive) return;
+            if (LockpickingManager.Instance != null && LockpickingManager.Instance.IsActive) return; // 🛠 НОВАЯ СТРОКА
+
 
             // 🛠 ФИКС: Если открыта торговля - закрываем её
             if (TradeUI.Instance != null && TradeUI.Instance.IsOpen)
